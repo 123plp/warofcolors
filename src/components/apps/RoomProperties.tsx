@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,9 +16,10 @@ interface RoomPropertiesProps {
   } | null;
   onClose: () => void;
   onChange: (updates: any) => void;
+  onEditRoom?: () => void;
 }
 
-export const RoomProperties = ({ room, onClose, onChange }: RoomPropertiesProps) => {
+export const RoomProperties = ({ room, onClose, onChange, onEditRoom }: RoomPropertiesProps) => {
   if (!room) return null;
 
   return (
@@ -29,6 +30,13 @@ export const RoomProperties = ({ room, onClose, onChange }: RoomPropertiesProps)
           <X className="w-4 h-4" />
         </Button>
       </div>
+
+      {onEditRoom && (
+        <Button size="sm" className="w-full mb-3" onClick={onEditRoom}>
+          <Edit3 className="w-4 h-4 mr-1" />
+          Edit Room Shape & Details
+        </Button>
+      )}
 
       <div className="space-y-3">
         <div>

@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { Grid3x3, Plus, Trash2, Move, Save, FolderOpen, Settings as SettingsIcon, Route, Pen, Eraser, Square, ZoomIn, ZoomOut, Maximize2, Link } from "lucide-react";
+import { Grid3x3, Plus, Trash2, Move, Save, FolderOpen, Settings as SettingsIcon, Route, Pen, Eraser, Square, ZoomIn, ZoomOut, Maximize2, Link, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { saveState, loadState } from "@/lib/persistence";
 import { RoomEditor } from "./RoomEditor";
-import { HallwayTool } from "./HallwayTool";
 import { RoomProperties } from "./RoomProperties";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getRoomColor, getRoomBackgroundColor } from "@/lib/roomColors";
 
 interface PlannerRoom {
   id: string;
@@ -22,11 +22,9 @@ interface PlannerRoom {
   sections: any[];
   doors: any[];
   connections: string[];
-}
-
-interface HallwayPoint {
-  x: number;
-  y: number;
+  gridShape?: boolean[][];
+  internalWalls?: any[];
+  subRooms?: any[];
 }
 
 interface DrawingPath {
@@ -45,7 +43,8 @@ export const FacilityPlanner = () => {
   const [rooms, setRooms] = useState<PlannerRoom[]>(() => loadState('facility_planner_rooms', []));
   const [editingRoom, setEditingRoom] = useState<PlannerRoom | null>(null);
   const [hallwayMode, setHallwayMode] = useState(false);
-  const [hallwayPoints, setHallwayPoints] = useState<HallwayPoint[]>([]);
+  const [hallwaySegments, setHallwaySegments] = useState<any[]>([]);
+  const [currentHallwayPoint, setCurrentHallwayPoint] = useState<{ x: number; y: number } | null>(null);
   const [clickCount, setClickCount] = useState<{ [key: string]: number }>({});
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -167,12 +166,67 @@ export const FacilityPlanner = () => {
     setDraggingRoom(null);
   };
 
+  const getRoomSide = (room: PlannerRoom, clickX: number, clickY: number): { x: number; y: number; side: string } | null => {
+    const threshold = 20;
+    const relX = clickX - room.x;
+    const relY = clickY - room.y;
+    
+    if (relY < threshold && relX >= 0 && relX <= room.width) {
+      return { x: clickX, y: room.y, side: 'top' };
+    }
+    if (relY > room.height - threshold && relY <= room.height && relX >= 0 && relX <= room.width) {
+      return { x: clickX, y: room.y + room.height, side: 'bottom' };
+    }
+    if (relX < threshold && relY >= 0 && relY <= room.height) {
+      return { x: room.x, y: clickY, side: 'left' };
+    }
+    if (relX > room.width - threshold && relX <= room.width && relY >= 0 && relY <= room.height) {
+      return { x: room.x + room.width, y: clickY, side: 'right' };
+    }
+    return null;
+  };
+
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (hallwayMode) {
       const rect = e.currentTarget.getBoundingClientRect();
-      const x = snapValue((e.clientX - rect.left - pan.x) / zoom);
-      const y = snapValue((e.clientY - rect.top - pan.y) / zoom);
-      setHallwayPoints([...hallwayPoints, { x, y }]);
+      const x = (e.clientX - rect.left - pan.x) / zoom;
+      const y = (e.clientY - rect.top - pan.y) / zoom;
+
+      let clickedSide = null;
+      let clickedRoom = null;
+      
+      for (const room of rooms) {
+        const side = getRoomSide(room, x, y);
+        if (side) {
+          clickedSide = side;
+          clickedRoom = room;
+          break;
+        }
+      }
+
+      if (!currentHallwayPoint) {
+        if (clickedSide && clickedRoom) {
+          setCurrentHallwayPoint({ x: clickedSide.x, y: clickedSide.y });
+          toast.info("Click another room side or empty space to continue");
+        } else {
+          toast.error("First click must be on a room side");
+        }
+      } else {
+        const newSegment = {
+          from: currentHallwayPoint,
+          to: clickedSide ? { x: clickedSide.x, y: clickedSide.y, roomId: clickedRoom?.id } : { x: snapValue(x), y: snapValue(y) }
+        };
+        
+        setHallwaySegments([...hallwaySegments, newSegment]);
+        
+        if (clickedSide && clickedRoom) {
+          toast.success("Hallway segment added - connected to room");
+          setCurrentHallwayPoint(null);
+        } else {
+          setCurrentHallwayPoint({ x: snapValue(x), y: snapValue(y) });
+          toast.info("Continue to another room or click Complete");
+        }
+      }
       return;
     }
     
@@ -201,19 +255,32 @@ export const FacilityPlanner = () => {
   };
 
   const completeHallway = () => {
-    if (hallwayPoints.length < 2) return toast.error("Need at least 2 points");
-    for (let i = 0; i < hallwayPoints.length - 1; i++) {
-      const [p1, p2] = [hallwayPoints[i], hallwayPoints[i + 1]];
+    if (hallwaySegments.length === 0) return toast.error("Need at least 1 segment");
+    
+    hallwaySegments.forEach((segment, i) => {
+      const from = segment.from;
+      const to = segment.to;
+      
+      if (!to) return;
+      
       setRooms(prev => [...prev, {
-        id: `hallway-${Date.now()}-${i}`, name: "Hallway", type: "corridor",
-        x: Math.min(p1.x, p2.x), y: Math.min(p1.y, p2.y),
-        width: Math.abs(p2.x - p1.x) || 40, height: Math.abs(p2.y - p1.y) || 40,
-        sections: [], doors: [], connections: []
+        id: `hallway-${Date.now()}-${i}`,
+        name: "Hallway",
+        type: "corridor",
+        x: Math.min(from.x, to.x),
+        y: Math.min(from.y, to.y),
+        width: Math.max(Math.abs(to.x - from.x), 40),
+        height: Math.max(Math.abs(to.y - from.y), 40),
+        sections: [],
+        doors: [],
+        connections: []
       }]);
-    }
-    setHallwayPoints([]);
+    });
+    
     setHallwayMode(false);
-    toast.success("Hallway created");
+    setHallwaySegments([]);
+    setCurrentHallwayPoint(null);
+    toast.success(`${hallwaySegments.length} hallway segment(s) created`);
   };
 
   const addRoom = (type: string) => {
@@ -249,7 +316,7 @@ export const FacilityPlanner = () => {
             <SelectItem value="custom">Custom Room</SelectItem>
           </SelectContent>
         </Select>
-        <Button onClick={() => { setHallwayMode(true); toast.info("Click points to create hallway"); }} size="sm" variant={hallwayMode ? "default" : "outline"}>
+        <Button onClick={() => { setHallwayMode(true); toast.info("Click on a room side to start hallway"); }} size="sm" variant={hallwayMode ? "default" : "outline"}>
           <Route className="w-4 h-4 mr-1" />Hallway Tool
         </Button>
         <div className="h-6 w-px bg-border mx-2" />
@@ -297,20 +364,71 @@ export const FacilityPlanner = () => {
               );
             })
           )}
+          {hallwaySegments.map((segment, i) => {
+            if (!segment.to) return null;
+            return (
+              <svg key={`hallway-${i}`} className="absolute inset-0 pointer-events-none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                <line 
+                  x1={segment.from.x} 
+                  y1={segment.from.y} 
+                  x2={segment.to.x} 
+                  y2={segment.to.y} 
+                  stroke="hsl(var(--accent))" 
+                  strokeWidth="3" 
+                  strokeDasharray="5,5"
+                />
+              </svg>
+            );
+          })}
+          {currentHallwayPoint && (
+            <div className="absolute w-4 h-4 bg-accent rounded-full -translate-x-1/2 -translate-y-1/2" 
+                 style={{ left: currentHallwayPoint.x, top: currentHallwayPoint.y }} />
+          )}
           {rooms.map(room => (
             <div 
               key={room.id} 
               className={`absolute border-2 cursor-move transition-colors ${
-                selectedRoomId === room.id ? 'border-accent bg-accent/30' : 
-                selectedRoomForConnect === room.id ? 'border-accent bg-accent/20' : 
-                'border-primary bg-primary/10 hover:bg-primary/20'
+                selectedRoomId === room.id ? 'border-accent' : ''
               }`}
-              style={{ left: room.x, top: room.y, width: room.width, height: room.height }}
+              style={{ 
+                left: room.x, 
+                top: room.y, 
+                width: room.width, 
+                height: room.height,
+                borderColor: getRoomColor(room.type),
+                backgroundColor: selectedRoomId === room.id 
+                  ? getRoomBackgroundColor(room.type, 0.3)
+                  : selectedRoomForConnect === room.id
+                  ? getRoomBackgroundColor(room.type, 0.25)
+                  : getRoomBackgroundColor(room.type, 0.15),
+              }}
               onClick={(e) => { e.stopPropagation(); handleRoomClick(room, e); }}
               onMouseDown={(e) => { e.stopPropagation(); handleRoomDragStart(room, e); }}
               onContextMenu={(e) => { e.preventDefault(); toggleConnection(room.id); }}
             >
               <div className="p-2 text-xs font-semibold">{room.name}</div>
+              {/* Internal walls */}
+              {room.internalWalls?.map((wall) => (
+                <div
+                  key={wall.id}
+                  className="absolute bg-white"
+                  style={
+                    wall.orientation === 'horizontal'
+                      ? {
+                          left: 0,
+                          right: 0,
+                          top: `${wall.position}%`,
+                          height: '2px',
+                        }
+                      : {
+                          top: 0,
+                          bottom: 0,
+                          left: `${wall.position}%`,
+                          width: '2px',
+                        }
+                  }
+                />
+              ))}
               <Button 
                 size="sm" 
                 variant="ghost" 
@@ -321,13 +439,40 @@ export const FacilityPlanner = () => {
               </Button>
             </div>
           ))}
-          {hallwayPoints.map((point, i) => (
-            <div key={i} className="absolute w-3 h-3 bg-accent rounded-full -translate-x-1/2 -translate-y-1/2" style={{ left: point.x, top: point.y }} />
-          ))}
         </div>
       </div>
       
-      {hallwayMode && <HallwayTool points={hallwayPoints} onAddPoint={() => {}} onComplete={completeHallway} onCancel={() => { setHallwayMode(false); setHallwayPoints([]); }} />}
+      {hallwayMode && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-background border-2 border-border rounded-lg shadow-lg p-4 z-50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Route className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-sm font-semibold">Hallway Mode</p>
+                <p className="text-xs text-muted-foreground">
+                  {hallwaySegments.length === 0 && !currentHallwayPoint && "Click a room side to start"}
+                  {currentHallwayPoint && "Click to add waypoint or room side to connect"}
+                  {hallwaySegments.length > 0 && !currentHallwayPoint && `${hallwaySegments.length} segment(s) created`}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="default" onClick={completeHallway} disabled={hallwaySegments.length === 0}>
+                <Check className="w-4 h-4 mr-1" />
+                Complete
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => { 
+                setHallwayMode(false); 
+                setHallwaySegments([]);
+                setCurrentHallwayPoint(null);
+              }}>
+                <X className="w-4 h-4 mr-1" />
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <RoomEditor 
         room={editingRoom} 
@@ -342,6 +487,12 @@ export const FacilityPlanner = () => {
         onChange={(updates) => {
           if (selectedRoomId) {
             setRooms(rooms.map(r => r.id === selectedRoomId ? { ...r, ...updates } : r));
+          }
+        }}
+        onEditRoom={() => {
+          if (selectedRoom) {
+            setEditingRoom(selectedRoom);
+            setSelectedRoomId(null);
           }
         }}
       />

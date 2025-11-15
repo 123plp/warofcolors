@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Plus, Trash2, DoorOpen, Edit3, Box, Grid3x3 } from "lucide-react";
+import { Plus, Trash2, DoorOpen, Edit3, Box, Grid3x3, SplitSquareHorizontal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { ShapeEditor } from "./ShapeEditor";
 
 interface RoomSection {
   id: string;
@@ -21,6 +22,18 @@ interface Door {
   offset: number; // percentage along the wall
 }
 
+interface InternalWall {
+  id: string;
+  orientation: "horizontal" | "vertical";
+  position: number; // percentage
+}
+
+interface SubRoom {
+  id: string;
+  name: string;
+  area: number; // which divided area (0 or 1)
+}
+
 interface Room {
   id: string;
   name: string;
@@ -32,6 +45,9 @@ interface Room {
   y: number;
   width: number;
   height: number;
+  gridShape?: boolean[][];
+  internalWalls?: InternalWall[];
+  subRooms?: SubRoom[];
 }
 
 interface RoomEditorProps {
@@ -44,6 +60,54 @@ interface RoomEditorProps {
 export const RoomEditor = ({ room, open, onClose, onSave }: RoomEditorProps) => {
   const [editedRoom, setEditedRoom] = useState<Room | null>(room);
   const [shapeEditMode, setShapeEditMode] = useState(false);
+
+  const handleShapeChange = (shape: boolean[][]) => {
+    if (!editedRoom) return;
+    setEditedRoom({ ...editedRoom, gridShape: shape });
+  };
+
+  const handleAddInternalWall = () => {
+    if (!editedRoom) return;
+    
+    const newWall: InternalWall = {
+      id: `wall-${Date.now()}`,
+      orientation: "horizontal",
+      position: 50,
+    };
+
+    setEditedRoom({
+      ...editedRoom,
+      internalWalls: [...(editedRoom.internalWalls || []), newWall],
+      subRooms: editedRoom.subRooms || [
+        { id: `sub-${Date.now()}-1`, name: `${editedRoom.name} A`, area: 0 },
+        { id: `sub-${Date.now()}-2`, name: `${editedRoom.name} B`, area: 1 },
+      ],
+    });
+    toast.success("Internal wall added - room split into sub-rooms");
+  };
+
+  const handleRemoveInternalWall = (wallId: string) => {
+    if (!editedRoom) return;
+    
+    const walls = editedRoom.internalWalls?.filter(w => w.id !== wallId) || [];
+    setEditedRoom({
+      ...editedRoom,
+      internalWalls: walls,
+      subRooms: walls.length === 0 ? [] : editedRoom.subRooms,
+    });
+    toast.success("Internal wall removed");
+  };
+
+  const handleUpdateInternalWall = (wallId: string, updates: Partial<InternalWall>) => {
+    if (!editedRoom) return;
+    
+    setEditedRoom({
+      ...editedRoom,
+      internalWalls: editedRoom.internalWalls?.map(w => 
+        w.id === wallId ? { ...w, ...updates } : w
+      ),
+    });
+  };
 
   const handleAddSection = () => {
     if (!editedRoom) return;
@@ -198,9 +262,11 @@ export const RoomEditor = ({ room, open, onClose, onSave }: RoomEditorProps) => 
               </Button>
             </div>
             {shapeEditMode && (
-              <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-                <p>Shape editor coming soon - create custom room shapes by clicking grid squares.</p>
-              </div>
+              <ShapeEditor
+                gridSize={12}
+                initialShape={editedRoom.gridShape}
+                onShapeChange={handleShapeChange}
+              />
             )}
           </div>
 
@@ -235,7 +301,56 @@ export const RoomEditor = ({ room, open, onClose, onSave }: RoomEditorProps) => 
             </div>
           </div>
 
-          {/* Doors & Internal Rooms */}
+          {/* Internal Walls & Sub-Rooms */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Internal Walls (Sub-Rooms)</Label>
+              <Button size="sm" onClick={handleAddInternalWall}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add Wall
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {editedRoom.internalWalls?.map((wall) => (
+                <div key={wall.id} className="flex items-center gap-2 p-2 bg-muted rounded">
+                  <SplitSquareHorizontal className="w-4 h-4" />
+                  <Select
+                    value={wall.orientation}
+                    onValueChange={(value: any) => handleUpdateInternalWall(wall.id, { orientation: value })}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="horizontal">Horizontal</SelectItem>
+                      <SelectItem value="vertical">Vertical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    min="10"
+                    max="90"
+                    value={wall.position}
+                    onChange={(e) => handleUpdateInternalWall(wall.id, { position: parseInt(e.target.value) || 50 })}
+                    className="w-20"
+                    placeholder="Position %"
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleRemoveInternalWall(wall.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              {(!editedRoom.internalWalls || editedRoom.internalWalls.length === 0) && (
+                <p className="text-sm text-muted-foreground">No internal walls</p>
+              )}
+            </div>
+          </div>
+
+          {/* Doors & Access Points */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label>Doors & Access Points</Label>
