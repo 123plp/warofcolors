@@ -55,11 +55,18 @@ interface WindowManagerProps {
   onCriticalKill: (processName: string, type?: "kernel" | "virus" | "bluescreen" | "memory" | "corruption" | "overload") => void;
   onOpenAdminPanel?: () => void;
   onLockdown?: (protocolName: string) => void;
+  onUpdate?: () => void;
+}
+
+interface WindowData {
+  id: string;
+  app: App;
+  zIndex: number;
 }
 
 import { GenericInstaller } from "./apps/GenericInstaller";
 
-export const WindowManager = ({ windows, onClose, onFocus, allWindows, onCloseWindow, onCriticalKill, onOpenAdminPanel, onLockdown }: WindowManagerProps) => {
+export const WindowManager = ({ windows, onClose, onFocus, allWindows, onCloseWindow, onCriticalKill, onOpenAdminPanel, onLockdown, onUpdate }: WindowManagerProps) => {
   const getAppContent = (appId: string) => {
     switch (appId) {
       case "app-store":
@@ -120,7 +127,7 @@ export const WindowManager = ({ windows, onClose, onFocus, allWindows, onCloseWi
       case "crash-app":
         return <CrashApp onCrash={() => onCriticalKill("SYSTEM_CRASH", "kernel")} />;
       case "settings":
-        return <Settings />;
+        return <Settings onUpdate={onUpdate} />;
       case "registry":
         return <RegistryEditor />;
       case "disk-manager":

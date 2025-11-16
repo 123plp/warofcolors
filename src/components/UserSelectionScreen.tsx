@@ -64,6 +64,8 @@ export const UserSelectionScreen = ({ onLogin }: UserSelectionScreenProps) => {
     setTimeout(() => {
       const user = users.find(u => u.id === selectedUser);
       if (user && password === user.password) {
+        // Store current logged in user
+        localStorage.setItem("urbanshade_current_user", JSON.stringify(user));
         onLogin();
       } else {
         setError("Incorrect password");

@@ -49,6 +49,7 @@ export const FacilityPlanner = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [placingRoomType, setPlacingRoomType] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedHallwayId, setSelectedHallwayId] = useState<string | null>(null);
   const [draggingRoom, setDraggingRoom] = useState<string | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, roomX: 0, roomY: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);

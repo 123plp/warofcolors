@@ -6,7 +6,7 @@ interface RecoveryModeProps {
 }
 
 export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
-  const [view, setView] = useState<"menu" | "restore" | "flash" | "cmd" | "advanced">("menu");
+  const [view, setView] = useState<"menu" | "restore" | "flash" | "cmd" | "advanced" | "processing">("menu");
   const [cmdOutput, setCmdOutput] = useState<string[]>([
     "URBANSHADE Recovery Console v3.7",
     "Type 'help' for available commands",
@@ -21,6 +21,8 @@ export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
     const saved = localStorage.getItem('recovery_system_images');
     return saved ? JSON.parse(saved) : [];
   });
+  const [processingMessage, setProcessingMessage] = useState("");
+  const [processingProgress, setProcessingProgress] = useState(0);
 
   const handleCmdCommand = (cmd: string) => {
     const newOutput = [...cmdOutput, `> ${cmd}`];
@@ -36,24 +38,72 @@ export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
         "  exit     - Exit console",
         ""
       ],
-      sfc: () => [
-        "System File Checker...",
-        "Scanning system files...",
-        "[OK] All protected system files are intact.",
-        ""
-      ],
-      chkdsk: () => [
-        "Checking disk C:...",
-        "[OK] No errors found.",
-        "Disk check complete.",
-        ""
-      ],
-      bootrec: () => [
-        "Boot Configuration Data Store...",
-        "Rebuilding boot records...",
-        "[OK] Boot files successfully repaired.",
-        ""
-      ],
+      sfc: () => {
+        setTimeout(() => {
+          setProcessingMessage("Running System File Checker...");
+          setProcessingProgress(0);
+          setView("processing");
+          
+          const interval = setInterval(() => {
+            setProcessingProgress(prev => {
+              if (prev >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                  setView("cmd");
+                  setCmdOutput(prev => [...prev, "[OK] System files integrity verified.", ""]);
+                }, 500);
+                return 100;
+              }
+              return prev + 5;
+            });
+          }, 100);
+        }, 500);
+        return ["Initializing System File Checker..."];
+      },
+      chkdsk: () => {
+        setTimeout(() => {
+          setProcessingMessage("Checking disk integrity...");
+          setProcessingProgress(0);
+          setView("processing");
+          
+          const interval = setInterval(() => {
+            setProcessingProgress(prev => {
+              if (prev >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                  setView("cmd");
+                  setCmdOutput(prev => [...prev, "[OK] Disk check complete. No errors found.", ""]);
+                }, 500);
+                return 100;
+              }
+              return prev + 4;
+            });
+          }, 120);
+        }, 500);
+        return ["Starting disk check..."];
+      },
+      bootrec: () => {
+        setTimeout(() => {
+          setProcessingMessage("Rebuilding boot configuration...");
+          setProcessingProgress(0);
+          setView("processing");
+          
+          const interval = setInterval(() => {
+            setProcessingProgress(prev => {
+              if (prev >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                  setView("cmd");
+                  setCmdOutput(prev => [...prev, "[OK] Boot files successfully repaired.", ""]);
+                }, 500);
+                return 100;
+              }
+              return prev + 3;
+            });
+          }, 100);
+        }, 500);
+        return ["Repairing boot configuration..."];
+      },
       clear: () => [""],
       exit: () => {
         setView("menu");
@@ -79,6 +129,26 @@ export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
     localStorage.setItem('recovery_restore_points', JSON.stringify(updated));
   };
 
+  const handleRestoreSystem = (point: string) => {
+    setProcessingMessage(`Restoring system to: ${point}`);
+    setProcessingProgress(0);
+    setView("processing");
+    
+    const interval = setInterval(() => {
+      setProcessingProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setView("menu");
+            alert("System restored successfully!");
+          }, 1000);
+          return 100;
+        }
+        return prev + 2;
+      });
+    }, 100);
+  };
+
   const handleImportImage = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -93,6 +163,26 @@ export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
       }
     };
     input.click();
+  };
+
+  const handleFlashImage = (image: string) => {
+    setProcessingMessage(`Flashing system image: ${image}`);
+    setProcessingProgress(0);
+    setView("processing");
+    
+    const interval = setInterval(() => {
+      setProcessingProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setView("menu");
+            alert("System image flashed successfully!");
+          }, 1000);
+          return 100;
+        }
+        return prev + 1;
+      });
+    }, 150);
   };
 
   const renderMenu = () => (
@@ -200,9 +290,13 @@ export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
         </button>
         <div className="space-y-2">
           {restorePoints.map((point, i) => (
-            <div key={i} className="bg-white/5 border border-white/20 rounded p-3 hover:bg-white/10 cursor-pointer">
+            <button 
+              key={i} 
+              onClick={() => handleRestoreSystem(point)}
+              className="w-full bg-white/5 border border-white/20 rounded p-3 hover:bg-white/10 transition-all text-left"
+            >
               {point}
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -230,9 +324,13 @@ export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
             <div className="text-center py-8 opacity-50">No system images available</div>
           ) : (
             systemImages.map((img, i) => (
-              <div key={i} className="bg-white/5 border border-white/20 rounded p-3 hover:bg-white/10 cursor-pointer">
+              <button
+                key={i} 
+                onClick={() => handleFlashImage(img)}
+                className="w-full bg-white/5 border border-white/20 rounded p-3 hover:bg-white/10 transition-all text-left"
+              >
                 {img}
-              </div>
+              </button>
             ))
           )}
         </div>
@@ -290,6 +388,23 @@ export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
     </div>
   );
 
+  const renderProcessing = () => (
+    <div className="flex flex-col items-center justify-center min-h-screen animate-fade-in">
+      <div className="w-24 h-24 relative animate-spin mb-8" style={{ animationDuration: '2s' }}>
+        <div className="absolute inset-0 rounded-full border-8 border-white/20"></div>
+        <div className="absolute inset-0 rounded-full border-8 border-transparent border-t-white"></div>
+      </div>
+      <h2 className="text-2xl font-bold mb-4">{processingMessage}</h2>
+      <div className="w-96 h-2 bg-white/20 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-white transition-all duration-300"
+          style={{ width: `${processingProgress}%` }}
+        />
+      </div>
+      <p className="mt-4 text-lg">{processingProgress}%</p>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-[#0078D7] to-[#0063B1] text-white">
       {view === "menu" && renderMenu()}
@@ -297,6 +412,7 @@ export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
       {view === "flash" && renderFlash()}
       {view === "cmd" && renderCmd()}
       {view === "advanced" && renderAdvanced()}
+      {view === "processing" && renderProcessing()}
     </div>
   );
 };

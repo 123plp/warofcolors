@@ -12,7 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { saveState, loadState } from "@/lib/persistence";
 import { toast } from "sonner";
 
-export const Settings = () => {
+export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
   const [selectedCategory, setSelectedCategory] = useState("system");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFactoryResetDialog, setShowFactoryResetDialog] = useState(false);
@@ -202,6 +202,7 @@ export const Settings = () => {
     { id: "accessibility", name: "Accessibility", icon: <Accessibility className="w-5 h-5" /> },
     { id: "notifications", name: "Notifications", icon: <Bell className="w-5 h-5" /> },
     { id: "power", name: "Power & Battery", icon: <Power className="w-5 h-5" /> },
+    { id: "about", name: "About Urbanshade OS", icon: <SettingsIcon className="w-5 h-5" /> },
   ];
 
   const renderContent = () => {
@@ -261,9 +262,17 @@ export const Settings = () => {
                   </div>
                   <Switch checked={telemetry} onCheckedChange={(checked) => { setTelemetry(checked); handleSave("settings_telemetry", checked); }} />
                 </div>
-                <Button className="w-full">Check for updates</Button>
+                <Button 
+                  className="w-full" 
+                  onClick={() => {
+                    toast.success("Update available! Installing v2.0.0");
+                    setTimeout(() => onUpdate?.(), 2000);
+                  }}
+                >
+                  Check for updates
+                </Button>
                 <div className="text-sm text-muted-foreground">
-                  Last checked: Today at 3:47 PM
+                  Last checked: Just now
                 </div>
               </div>
             </Card>
@@ -1208,6 +1217,99 @@ export const Settings = () => {
               <div className="space-y-3">
                 <Button variant="outline" className="w-full justify-start">Display and sleep</Button>
                 <Button variant="outline" className="w-full justify-start">Lid and power button</Button>
+              </div>
+            </Card>
+          </div>
+        );
+
+      case "about":
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h2 className="text-2xl font-bold mb-4">About Urbanshade OS</h2>
+              <p className="text-muted-foreground mb-6">Information about your system</p>
+            </div>
+
+            <Card className="p-6">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-20 h-20 bg-primary/20 rounded-lg flex items-center justify-center">
+                  <SettingsIcon className="w-12 h-12 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">URBANSHADE OS</h3>
+                  <p className="text-muted-foreground">Version 2.0.0</p>
+                  <p className="text-xs text-muted-foreground mt-1">Build 20250116</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2">System Information</h4>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>© 2025 Urbanshade Corporation</p>
+                    <p>Deep Sea Research Division</p>
+                    <p>All Rights Reserved</p>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => window.open('https://github.com/yourusername/urbanshade-os', '_blank')}
+                  >
+                    <Globe className="w-4 h-4 mr-2" />
+                    Visit GitHub Repository
+                  </Button>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-3">Contributors</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Lead Developer</p>
+                        <p className="text-sm text-muted-foreground">Main contributor</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">UI/UX Designer</p>
+                        <p className="text-sm text-muted-foreground">Interface design</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Quality Assurance</p>
+                        <p className="text-sm text-muted-foreground">Testing & bug fixes</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <h4 className="font-semibold mb-3">License & Legal</h4>
+                  <p className="text-sm text-muted-foreground">
+                    This software is provided as-is for research and development purposes. 
+                    Urbanshade Corporation assumes no liability for any incidents, accidents, 
+                    or anomalies that may occur during operation.
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <Button variant="outline" className="w-full">
+                    View Open Source Licenses
+                  </Button>
+                </div>
               </div>
             </Card>
           </div>

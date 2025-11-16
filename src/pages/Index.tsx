@@ -15,10 +15,13 @@ import { FirstTimeTour } from "@/components/FirstTimeTour";
 import { RecoveryMode } from "@/components/RecoveryMode";
 import { DisclaimerScreen } from "@/components/DisclaimerScreen";
 import { OOBEScreen } from "@/components/OOBEScreen";
+import { ChangelogDialog } from "@/components/ChangelogDialog";
+import { UpdateScreen } from "@/components/UpdateScreen";
 
 const Index = () => {
   const [adminSetupComplete, setAdminSetupComplete] = useState(false);
   const [showingBiosTransition, setShowingBiosTransition] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [biosComplete, setBiosComplete] = useState(() => {
     // Check if we should reboot to BIOS
     const rebootToBios = localStorage.getItem("urbanshade_reboot_to_bios");
@@ -344,6 +347,14 @@ const Index = () => {
     return <OOBEScreen onComplete={() => setOobeComplete(true)} />;
   }
 
+  if (isUpdating) {
+    return <UpdateScreen onComplete={() => {
+      setIsUpdating(false);
+      setBooted(false);
+      setLoggedIn(false);
+    }} />;
+  }
+
   return (
     <>
       <Desktop 
@@ -353,7 +364,9 @@ const Index = () => {
         onOpenAdminPanel={() => setShowAdminPanel(true)}
         onLockdown={handleLockdown}
         onEnterBios={handleEnterBios}
+        onUpdate={() => setIsUpdating(true)}
       />
+      <ChangelogDialog />
       {showAdminPanel && <AdminPanel onExit={() => setShowAdminPanel(false)} onCrash={handleAdminCrash} onCustomCrash={handleCustomCrash} />}
       {maintenanceMode && <MaintenanceMode onExit={() => setMaintenanceMode(false)} />}
       {showTour && <FirstTimeTour onComplete={() => setShowTour(false)} />}
