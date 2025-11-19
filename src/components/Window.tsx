@@ -7,9 +7,10 @@ interface WindowProps {
   zIndex: number;
   onClose: () => void;
   onFocus: () => void;
+  onMinimize?: () => void;
 }
 
-export const Window = ({ title, children, zIndex, onClose, onFocus }: WindowProps) => {
+export const Window = ({ title, children, zIndex, onClose, onFocus, onMinimize }: WindowProps) => {
   const [position, setPosition] = useState({ x: 100 + Math.random() * 200, y: 80 + Math.random() * 100 });
   const [size, setSize] = useState({ width: 800, height: 600 });
   const [isDragging, setIsDragging] = useState(false);
@@ -122,18 +123,24 @@ export const Window = ({ title, children, zIndex, onClose, onFocus }: WindowProp
       >
         <div className="flex-1 font-bold text-sm">{title}</div>
         <div className="window-controls flex gap-2">
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors">
+          <button
+            onClick={onMinimize}
+            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+            title="Minimize"
+          >
             <Minus className="w-4 h-4" />
           </button>
           <button 
             onClick={handleMaximize}
             className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+            title="Maximize"
           >
             <Maximize2 className="w-4 h-4" />
           </button>
           <button 
             onClick={onClose}
             className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-destructive/20 text-destructive transition-colors"
+            title="Close"
           >
             <X className="w-4 h-4" />
           </button>

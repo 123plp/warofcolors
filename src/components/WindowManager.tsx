@@ -44,12 +44,14 @@ interface WindowData {
   id: string;
   app: App;
   zIndex: number;
+  minimized?: boolean;
 }
 
 interface WindowManagerProps {
   windows: WindowData[];
   onClose: (id: string) => void;
   onFocus: (id: string) => void;
+  onMinimize?: (id: string) => void;
   allWindows: WindowData[];
   onCloseWindow: (id: string) => void;
   onCriticalKill: (processName: string, type?: "kernel" | "virus" | "bluescreen" | "memory" | "corruption" | "overload") => void;
@@ -57,7 +59,7 @@ interface WindowManagerProps {
   onLockdown?: (protocolName: string) => void;
 }
 
-export const WindowManager = ({ windows, onClose, onFocus, allWindows, onCloseWindow, onCriticalKill, onOpenAdminPanel, onLockdown }: WindowManagerProps) => {
+export const WindowManager = ({ windows, onClose, onFocus, onMinimize, allWindows, onCloseWindow, onCriticalKill, onOpenAdminPanel, onLockdown }: WindowManagerProps) => {
   const getAppContent = (appId: string) => {
     switch (appId) {
       case "app-store":
@@ -217,13 +219,14 @@ export const WindowManager = ({ windows, onClose, onFocus, allWindows, onCloseWi
 
   return (
     <>
-      {windows.map(window => (
+      {windows.filter(w => !w.minimized).map((window) => (
         <Window
           key={window.id}
           title={window.app.name}
           zIndex={window.zIndex}
           onClose={() => onClose(window.id)}
           onFocus={() => onFocus(window.id)}
+          onMinimize={() => onMinimize?.(window.id)}
         >
           {getAppContent(window.app.id)}
         </Window>

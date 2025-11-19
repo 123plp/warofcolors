@@ -18,8 +18,26 @@ export interface App {
 
 export const Desktop = ({ onLogout, onReboot, onShutdown, onCriticalKill, onOpenAdminPanel, onLockdown, onEnterBios }: { onLogout: () => void; onReboot: () => void; onShutdown: () => void; onCriticalKill: (processName: string, type?: "kernel" | "virus" | "bluescreen" | "memory" | "corruption" | "overload") => void; onOpenAdminPanel?: () => void; onLockdown?: (protocolName: string) => void; onEnterBios?: () => void; }) => {
   const [startMenuOpen, setStartMenuOpen] = useState(false);
-  const [windows, setWindows] = useState<Array<{ id: string; app: App; zIndex: number }>>([]);
+  const [windows, setWindows] = useState<Array<{ id: string; app: App; zIndex: number; minimized?: boolean }>>([]);
   const [nextZIndex, setNextZIndex] = useState(100);
+  
+  // Load background gradient from settings
+  const [bgGradient, setBgGradient] = useState(() => {
+    const start = localStorage.getItem('settings_bg_gradient_start') || '#1a1a2e';
+    const end = localStorage.getItem('settings_bg_gradient_end') || '#16213e';
+    return { start, end };
+  });
+
+  // Listen for settings changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const start = localStorage.getItem('settings_bg_gradient_start') || '#1a1a2e';
+      const end = localStorage.getItem('settings_bg_gradient_end') || '#16213e';
+      setBgGradient({ start, end });
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   const [draggedIcon, setDraggedIcon] = useState<string | null>(null);
   const [iconPositions, setIconPositions] = useState<Record<string, { x: number; y: number }>>(() => {
     const saved = localStorage.getItem('icon_positions');
@@ -49,9 +67,22 @@ export const Desktop = ({ onLogout, onReboot, onShutdown, onCriticalKill, onOpen
     setWindows(prev => prev.filter(w => w.id !== id));
   };
 
+  const minimizeWindow = (id: string) => {
+    setWindows(prev => prev.map(w => 
+      w.id === id ? { ...w, minimized: true } : w
+    ));
+  };
+
+  const restoreWindow = (id: string) => {
+    setWindows(prev => prev.map(w => 
+      w.id === id ? { ...w, minimized: false, zIndex: nextZIndex } : w
+    ));
+    setNextZIndex(prev => prev + 1);
+  };
+
   const focusWindow = (id: string) => {
     setWindows(prev => prev.map(w => 
-      w.id === id ? { ...w, zIndex: nextZIndex } : w
+      w.id === id ? { ...w, zIndex: nextZIndex, minimized: false } : w
     ));
     setNextZIndex(prev => prev + 1);
   };
@@ -569,7 +600,12 @@ export const Desktop = ({ onLogout, onReboot, onShutdown, onCriticalKill, onOpen
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden">
+    <div 
+      className="relative h-screen w-full overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${bgGradient.start} 0%, ${bgGradient.end} 100%)`
+      }}
+    >
       {/* Desktop Icons */}
       <div className="relative z-10 p-7">
         <div className="relative" style={{ minHeight: '100vh' }}>
@@ -606,6 +642,7 @@ export const Desktop = ({ onLogout, onReboot, onShutdown, onCriticalKill, onOpen
         windows={windows} 
         onClose={closeWindow}
         onFocus={focusWindow}
+        onMinimize={minimizeWindow}
         allWindows={windows}
         onCloseWindow={closeWindow}
         onCriticalKill={onCriticalKill}
@@ -629,6 +666,8 @@ export const Desktop = ({ onLogout, onReboot, onShutdown, onCriticalKill, onOpen
         onStartClick={() => setStartMenuOpen(!startMenuOpen)}
         pinnedApps={apps.slice(0, 4)}
         onPinnedClick={openWindow}
+        windows={windows}
+        onRestoreWindow={restoreWindow}
       />
     </div>
   );
