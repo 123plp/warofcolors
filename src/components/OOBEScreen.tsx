@@ -537,10 +537,10 @@ export const OOBEScreen = ({ onComplete }: OOBEScreenProps) => {
               <p className="text-cyan-600 mb-8">Configuring your workstation...</p>
               
               <div className="bg-slate-800/50 border border-cyan-500/20 rounded-lg p-4 mb-6 text-left font-mono text-xs max-h-48 overflow-y-auto">
-                {finishMessages.map((msg, i) => (
+              {finishMessages.filter(Boolean).map((msg, i) => (
                   <div key={i} className="flex items-center gap-2 py-1">
                     <span className="text-cyan-600">&gt;</span>
-                    <span className={msg.includes("complete") ? "text-green-400" : "text-cyan-300"}>{msg}</span>
+                    <span className={msg?.includes("complete") ? "text-green-400" : "text-cyan-300"}>{msg}</span>
                   </div>
                 ))}
                 {finishProgress < 100 && <span className="text-cyan-400 animate-pulse">█</span>}
