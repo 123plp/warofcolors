@@ -881,6 +881,9 @@ const InstallingScreen = ({
         </div>
       </div>
     )},
+    { title: "Dev Mode", content: (
+      <DevModeConfig />
+    )},
   ];
 
   return (
@@ -954,11 +957,11 @@ const InstallingScreen = ({
                   ←
                 </UrbanButton>
                 <div className="flex gap-1">
-                  {[0,1,2,3].map(i => (
+                  {[0,1,2,3,4].map(i => (
                     <div key={i} className={`w-2 h-2 rounded-full ${i <= configStep ? "bg-cyan-400" : "bg-slate-700"}`} />
                   ))}
                 </div>
-                {configStep < 3 ? (
+                {configStep < 4 ? (
                   <UrbanButton onClick={() => setConfigStep(configStep + 1)} size="sm">
                     →
                   </UrbanButton>
@@ -986,6 +989,44 @@ const InstallingScreen = ({
           {canFinish ? "Launch UrbanShade →" : "Please wait..."}
         </UrbanButton>
       </div>
+    </div>
+  );
+};
+
+// Dev Mode configuration during install
+const DevModeConfig = () => {
+  const [devMode, setDevMode] = useState(false);
+  
+  const handleToggle = (checked: boolean) => {
+    setDevMode(checked);
+    localStorage.setItem("urbanshade_dev_mode_install", JSON.stringify(checked));
+    localStorage.setItem("settings_developer_mode", JSON.stringify(checked));
+  };
+  
+  return (
+    <div className="space-y-3">
+      <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-slate-800/50">
+        <input
+          type="checkbox"
+          checked={devMode}
+          onChange={(e) => handleToggle(e.target.checked)}
+          className="mt-1"
+        />
+        <div>
+          <div className="text-sm text-cyan-300">Enable Developer Mode</div>
+          <div className="text-xs text-slate-500">Access DEF-DEV debug console</div>
+        </div>
+      </label>
+      {devMode && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded p-2 text-xs text-amber-400">
+          ⚠ Dev Mode enables advanced debugging. LocalStorage may be bypassed.
+        </div>
+      )}
+      {!devMode && (
+        <div className="text-xs text-slate-500 p-2">
+          Developer tools will be hidden from regular users.
+        </div>
+      )}
     </div>
   );
 };

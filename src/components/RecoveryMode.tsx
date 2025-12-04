@@ -926,23 +926,63 @@ export const RecoveryMode = ({ onExit }: RecoveryModeProps) => {
         <ArrowLeft className="w-4 h-4" />
         Back to menu
       </button>
-      <h2 className="text-3xl font-bold mb-4 text-cyan-400">Advanced Options</h2>
+      <h2 className="text-3xl font-bold mb-4 text-cyan-400">Advanced Boot Options</h2>
+      <p className="text-gray-400 mb-6">UrbanShade OS startup configuration</p>
       
       <div className="space-y-3">
-        <div className="bg-white/10 border border-cyan-500/30 rounded-lg p-4 hover:bg-cyan-500/10 cursor-pointer transition-all">
-          Startup Repair - Fix problems that prevent system from loading
+        <div 
+          onClick={() => {
+            toast.success("Running startup diagnostics...");
+            setTimeout(() => toast.success("No issues found. System healthy."), 2000);
+          }}
+          className="bg-white/10 border border-cyan-500/30 rounded-lg p-4 hover:bg-cyan-500/10 cursor-pointer transition-all"
+        >
+          <div className="font-bold text-cyan-300">Startup Repair</div>
+          <div className="text-sm text-gray-400">Fix problems that prevent UrbanShade from loading</div>
         </div>
-        <div className="bg-white/10 border border-cyan-500/30 rounded-lg p-4 hover:bg-cyan-500/10 cursor-pointer transition-all">
-          Startup Settings - Change startup behavior
+        <div 
+          onClick={() => {
+            localStorage.setItem("urbanshade_safe_mode", "true");
+            toast.success("Safe Mode enabled. Restarting...");
+            setTimeout(() => window.location.reload(), 1000);
+          }}
+          className="bg-white/10 border border-cyan-500/30 rounded-lg p-4 hover:bg-cyan-500/10 cursor-pointer transition-all"
+        >
+          <div className="font-bold text-cyan-300">Safe Mode</div>
+          <div className="text-sm text-gray-400">Start with minimal drivers and services</div>
+        </div>
+        <div 
+          onClick={() => {
+            localStorage.setItem("urbanshade_verbose_boot", localStorage.getItem("urbanshade_verbose_boot") === "true" ? "false" : "true");
+            toast.success(`Verbose boot ${localStorage.getItem("urbanshade_verbose_boot") === "true" ? "enabled" : "disabled"}`);
+          }}
+          className="bg-white/10 border border-cyan-500/30 rounded-lg p-4 hover:bg-cyan-500/10 cursor-pointer transition-all"
+        >
+          <div className="font-bold text-cyan-300">Boot Logging</div>
+          <div className="text-sm text-gray-400">Enable verbose startup messages</div>
         </div>
         <div 
           onClick={() => {
             localStorage.setItem("urbanshade_reboot_to_bios", "true");
-            window.location.reload();
+            toast.success("Rebooting to BIOS...");
+            setTimeout(() => window.location.reload(), 500);
           }}
           className="bg-white/10 border border-cyan-500/30 rounded-lg p-4 hover:bg-cyan-500/10 cursor-pointer transition-all"
         >
-          BIOS Settings - Access BIOS setup
+          <div className="font-bold text-cyan-300">BIOS/UEFI Settings</div>
+          <div className="text-sm text-gray-400">Access UrbanShade firmware configuration</div>
+        </div>
+        <div 
+          onClick={() => {
+            localStorage.removeItem("urbanshade_first_boot");
+            localStorage.removeItem("urbanshade_admin");
+            toast.success("Boot configuration reset. Restarting setup...");
+            setTimeout(() => window.location.reload(), 1000);
+          }}
+          className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 hover:bg-red-500/20 cursor-pointer transition-all"
+        >
+          <div className="font-bold text-red-400">Reset Boot Configuration</div>
+          <div className="text-sm text-gray-400">Clear boot settings and restart installation wizard</div>
         </div>
       </div>
     </div>
