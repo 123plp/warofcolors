@@ -306,16 +306,31 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
                     <div className="flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                       <div>
                         <div className="font-medium">Developer Mode</div>
-                        <div className="text-sm text-muted-foreground">Enable advanced features</div>
+                        <div className="text-sm text-muted-foreground">Enable DEF-DEV debug console access</div>
                       </div>
                       <Switch 
                         checked={developerMode} 
                         onCheckedChange={(checked) => {
                           setDeveloperMode(checked);
                           handleSave("settings_developer_mode", checked);
+                          toast.success(checked ? "Developer Mode enabled - Refreshing..." : "Developer Mode disabled");
+                          if (checked) {
+                            setTimeout(() => window.location.reload(), 500);
+                          }
                         }} 
                       />
                     </div>
+
+                    {developerMode && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                        onClick={() => window.open("/def-dev", "_blank")}
+                      >
+                        <Code className="w-4 h-4 mr-2" />
+                        Launch DEF-DEV Console
+                      </Button>
+                    )}
 
                     <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div>
