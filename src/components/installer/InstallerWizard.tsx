@@ -690,10 +690,10 @@ const DirectoryScreen = ({ installDir, setInstallDir, onBack, onNext }: {
       <div className="bg-slate-800/50 border border-cyan-500/20 rounded-lg p-3 h-48 overflow-y-auto">
         <div className="text-xs space-y-1 font-mono">
           {[
-            { icon: HardDrive, name: "C:\\ (System)", indent: 0 },
+            { icon: HardDrive, name: "Unallocated Drive (0:)", indent: 0 },
             { icon: Folder, name: "Program Files", indent: 1 },
             { icon: Folder, name: "URBANSHADE", indent: 1, active: true },
-            { icon: Folder, name: "Windows", indent: 1 },
+            { icon: Folder, name: "System", indent: 1 },
             { icon: Folder, name: "Users", indent: 1 },
           ].map((item, i) => (
             <div 

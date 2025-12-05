@@ -59,10 +59,18 @@ const simplifyError = (message: string): string => {
   return message.length > 100 ? "An unexpected error occurred" : message;
 };
 
+interface CrashEntry {
+  stopCode: string;
+  process?: string;
+  module?: string;
+  timestamp: string;
+}
+
 const DevMode = () => {
   const [devModeEnabled, setDevModeEnabled] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
-  const [showActionConsent, setShowActionConsent] = useState(false);
+  const [crashEntry, setCrashEntry] = useState<CrashEntry | null>(null);
+  const [showCrashWarning, setShowCrashWarning] = useState(false);
   const [actionConsentChecked, setActionConsentChecked] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [actions, setActions] = useState<ActionEntry[]>([]);
@@ -82,8 +90,46 @@ const DevMode = () => {
   const logsEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Check if coming from crash screen
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromCrash = urlParams.get('from') === 'crash';
+    
+    if (fromCrash) {
+      // Load crash entry data
+      const crashData = localStorage.getItem('urbanshade_crash_entry');
+      if (crashData) {
+        const parsed = JSON.parse(crashData);
+        setCrashEntry(parsed);
+        // Skip warning and go straight to bugchecks tab
+        setShowWarning(false);
+        setSelectedTab("bugchecks");
+        // Add crash to bugchecks
+        const existingBugchecks = JSON.parse(localStorage.getItem('urbanshade_bugchecks') || '[]');
+        const newBugcheck: BugcheckEntry = {
+          code: parsed.stopCode,
+          description: `Crash from ${parsed.process || 'unknown process'}`,
+          timestamp: parsed.timestamp,
+          location: parsed.module,
+          systemInfo: { source: 'crash_screen' }
+        };
+        const updated = [newBugcheck, ...existingBugchecks].slice(0, 50);
+        localStorage.setItem('urbanshade_bugchecks', JSON.stringify(updated));
+        setBugchecks(updated);
+        // Clear crash entry
+        localStorage.removeItem('urbanshade_crash_entry');
+      }
+      // Force dev mode for crash debugging
+      setDevModeEnabled(true);
+    }
+  }, []);
+
   // Check if dev mode is enabled
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromCrash = urlParams.get('from') === 'crash';
+    if (fromCrash) return; // Already handled above
+    
     const devEnabled = loadState("settings_developer_mode", false) || loadState("urbanshade_dev_mode_install", false);
     setDevModeEnabled(devEnabled);
     
@@ -209,109 +255,146 @@ const DevMode = () => {
     );
   }
 
-  // Warning popup - Enhanced
+  // Warning popup - Redesigned with terminal aesthetic
   if (showWarning) {
     return (
-      <div className="fixed inset-0 bg-slate-950 flex items-center justify-center p-4">
-        <div className="max-w-2xl bg-slate-900 border border-amber-500/50 rounded-lg overflow-hidden shadow-2xl shadow-amber-500/20">
-          <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-4 flex items-center gap-3">
-            <AlertTriangle className="w-8 h-8 text-white" />
-            <div>
-              <h2 className="text-xl font-bold text-white">Developer Environment</h2>
-              <p className="text-amber-100 text-sm">DEF-DEV Debug Console v2.0</p>
-            </div>
-          </div>
-          
-          <div className="p-6 space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-              <Info className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-gray-300">
-                <p className="font-semibold text-cyan-400 mb-2">What is DEF-DEV?</p>
-                <p>DEF-DEV is an <strong>open, free-to-use debugging and development console</strong> for UrbanShade OS. It provides comprehensive access to:</p>
-                <ul className="mt-2 ml-4 list-disc space-y-1 text-gray-400">
-                  <li>Real-time console logs, warnings, and errors</li>
-                  <li>System action monitoring (apps, files, security events)</li>
-                  <li>LocalStorage inspection and management</li>
-                  <li>Recovery image creation, editing, and restoration</li>
-                  <li>Bugcheck reports and crash diagnostics</li>
-                  <li><strong className="text-amber-400">Admin commands</strong> (crash triggers, system controls)</li>
-                </ul>
+      <div className="fixed inset-0 bg-[#0a0a0f] flex items-center justify-center p-4">
+        {/* Animated background grid */}
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: 'linear-gradient(rgba(16,185,129,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.1) 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }} />
+        
+        <div className="relative max-w-3xl w-full">
+          {/* Terminal window */}
+          <div className="bg-[#0d1117] border border-emerald-500/30 rounded-lg overflow-hidden shadow-2xl shadow-emerald-500/10">
+            {/* Title bar */}
+            <div className="bg-gradient-to-r from-emerald-900/80 to-cyan-900/80 px-4 py-3 flex items-center gap-3 border-b border-emerald-500/30">
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                <div className="w-3 h-3 rounded-full bg-green-500/80" />
               </div>
+              <div className="flex-1 text-center">
+                <span className="font-mono text-sm text-emerald-300/80">def-dev@urbanshade:~</span>
+              </div>
+              <Bug className="w-5 h-5 text-emerald-400" />
             </div>
             
-            <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-gray-300">
-                <p className="font-semibold text-amber-400 mb-2">A Friendly Heads-Up</p>
-                <p>If you're a casual user just exploring the system, these tools are probably not what you're looking for. They're intended for developers, troubleshooters, and anyone who knows what they're doing.</p>
-                <p className="mt-2 text-amber-300/80 font-medium">Modifying values incorrectly could cause system instability, data loss, or unexpected behavior. Proceed with caution.</p>
+            {/* Terminal content */}
+            <div className="p-6 font-mono text-sm space-y-4">
+              {/* ASCII art header */}
+              <pre className="text-emerald-400 text-xs leading-tight">
+{`╔══════════════════════════════════════════════════════════════╗
+║  ██████╗ ███████╗███████╗    ██████╗ ███████╗██╗   ██╗       ║
+║  ██╔══██╗██╔════╝██╔════╝    ██╔══██╗██╔════╝██║   ██║       ║
+║  ██║  ██║█████╗  █████╗█████╗██║  ██║█████╗  ██║   ██║       ║
+║  ██║  ██║██╔══╝  ██╔══╝╚════╝██║  ██║██╔══╝  ╚██╗ ██╔╝       ║
+║  ██████╔╝███████╗██║         ██████╔╝███████╗ ╚████╔╝        ║
+║  ╚═════╝ ╚══════╝╚═╝         ╚═════╝ ╚══════╝  ╚═══╝  v2.1   ║
+╚══════════════════════════════════════════════════════════════╝`}
+              </pre>
+              
+              <div className="text-cyan-400">
+                <span className="text-emerald-500">$</span> cat /etc/def-dev/README
               </div>
-            </div>
-
-            {/* Action Logging Consent */}
-            <div className="flex items-start gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-              <Database className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-gray-300 flex-1">
-                <p className="font-semibold text-green-400 mb-2">Action Logging Storage</p>
-                <p className="mb-3">Enable persistent action logging to save OS events to <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">def-dev-actions</code> localStorage. This allows you to review actions across sessions.</p>
+              
+              <div className="bg-slate-900/50 border border-slate-700 rounded p-4 space-y-3">
+                <p className="text-gray-300">
+                  <span className="text-emerald-400 font-bold">DEF-DEV</span> is an advanced debugging environment for UrbanShade OS.
+                </p>
+                <div className="text-gray-400 space-y-1">
+                  <p><span className="text-cyan-400">→</span> Real-time console capture & error tracking</p>
+                  <p><span className="text-cyan-400">→</span> System action monitoring & event logging</p>
+                  <p><span className="text-cyan-400">→</span> LocalStorage inspection & live editing</p>
+                  <p><span className="text-cyan-400">→</span> Recovery image management & export</p>
+                  <p><span className="text-cyan-400">→</span> Admin commands & crash triggers</p>
+                </div>
+              </div>
+              
+              <div className="text-amber-400">
+                <span className="text-emerald-500">$</span> cat /etc/def-dev/WARNING
+              </div>
+              
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-amber-200 space-y-2">
+                    <p className="font-bold">⚠ CAUTION: Advanced Tools</p>
+                    <p className="text-amber-300/80 text-xs">
+                      These tools can modify system state. Incorrect changes may cause instability or data loss. 
+                      Intended for developers and advanced users.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action consent */}
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded p-4">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={actionConsentChecked}
                     onChange={(e) => setActionConsentChecked(e.target.checked)}
-                    className="w-5 h-5 rounded border-green-500 bg-slate-800 text-green-500 focus:ring-green-500"
+                    className="w-4 h-4 rounded border-emerald-500 bg-slate-800 accent-emerald-500"
                   />
-                  <span className="text-green-300">I consent to creating <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">def-dev-actions</code> localStorage</span>
+                  <span className="text-emerald-300 text-xs">
+                    Enable persistent action logging (saves events to localStorage)
+                  </span>
                 </label>
               </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-              <Database className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-gray-300">
-                <p className="font-semibold text-purple-400 mb-2">Developer Mode Notice</p>
-                <p>While Developer Mode is active, some persistence features may be bypassed for testing purposes. Your changes may not persist across sessions as expected.</p>
+              
+              <div className="text-gray-500">
+                <span className="text-emerald-500">$</span> <span className="animate-pulse">_</span>
               </div>
             </div>
-
-            <Link 
-              to="/docs/def-dev" 
-              className="flex items-center gap-2 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 hover:bg-green-500/20 transition-colors"
-            >
-              <BookOpen className="w-5 h-5" />
-              <div className="flex-1">
-                <p className="font-semibold">Read the Documentation</p>
-                <p className="text-sm text-green-400/70">Learn how to use DEF-DEV effectively</p>
-              </div>
-              <ExternalLink className="w-4 h-4" />
-            </Link>
-          </div>
-          
-          <div className="p-4 bg-slate-800 flex gap-3">
-            <button
-              onClick={() => window.location.href = "/"}
-              className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-gray-300"
-            >
-              Go Back
-            </button>
-            <button
-              onClick={() => {
-                if (actionConsentChecked) {
-                  actionDispatcher.setPersistence(true);
-                  setActionPersistenceEnabled(true);
-                  toast.success("Action logging enabled - events will persist to localStorage");
-                }
-                setShowWarning(false);
-              }}
-              className="flex-1 px-4 py-3 bg-amber-600 hover:bg-amber-500 rounded-lg text-white font-semibold"
-            >
-              I Understand, Continue
-            </button>
+            
+            {/* Action buttons */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => window.location.href = "/"}
+                className="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-gray-300 font-mono text-sm transition-colors"
+              >
+                exit
+              </button>
+              <Link
+                to="/docs/def-dev"
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-cyan-500/50 rounded text-cyan-400 font-mono text-sm transition-colors flex items-center gap-2"
+              >
+                <BookOpen className="w-4 h-4" /> docs
+              </Link>
+              <button
+                onClick={() => {
+                  if (actionConsentChecked) {
+                    actionDispatcher.setPersistence(true);
+                    setActionPersistenceEnabled(true);
+                    toast.success("Action logging enabled");
+                  }
+                  setShowWarning(false);
+                }}
+                className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded text-white font-mono text-sm font-bold transition-colors"
+              >
+                ./start --confirm
+              </button>
+            </div>
           </div>
         </div>
       </div>
     );
   }
+
+  // Handle crash entry mode tab switching warning
+  const handleTabSwitch = (newTab: typeof selectedTab) => {
+    if (crashEntry && selectedTab === "bugchecks" && newTab !== "bugchecks") {
+      if (!showCrashWarning) {
+        toast.warning("You entered from a crash. Review the bugcheck data before navigating away.", {
+          duration: 4000
+        });
+        setShowCrashWarning(true);
+      }
+    }
+    setSelectedTab(newTab);
+  };
 
   const getIcon = (type: LogEntry["type"]) => {
     switch (type) {
@@ -450,13 +533,32 @@ const DevMode = () => {
 
   return (
     <div className="fixed inset-0 bg-[#0d1117] text-gray-100 flex flex-col font-mono">
+      {/* Crash entry banner */}
+      {crashEntry && (
+        <div className="bg-red-500/20 border-b border-red-500/50 px-4 py-2 flex items-center gap-3">
+          <AlertOctagon className="w-5 h-5 text-red-400" />
+          <div className="flex-1">
+            <span className="text-red-400 font-bold text-sm">CRASH DEBUG MODE</span>
+            <span className="text-red-300/70 text-xs ml-3">
+              Stop code: {crashEntry.stopCode} | Module: {crashEntry.module || 'Unknown'}
+            </span>
+          </div>
+          <button 
+            onClick={() => setCrashEntry(null)}
+            className="text-red-400/70 hover:text-red-400 text-xs"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="bg-gradient-to-r from-amber-900/50 to-orange-900/50 border-b border-amber-500/30 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Bug className="w-6 h-6 text-amber-400" />
           <div>
             <h1 className="font-bold text-amber-400">DEF-DEV Console</h1>
-            <p className="text-xs text-gray-500">UrbanShade Developer Environment</p>
+            <p className="text-xs text-gray-500">UrbanShade Developer Environment v2.1</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -482,14 +584,17 @@ const DevMode = () => {
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setSelectedTab(tab.id as any)}
+            onClick={() => handleTabSwitch(tab.id as any)}
             className={`flex items-center gap-2 px-4 py-2 text-sm border-b-2 transition-colors ${
               selectedTab === tab.id 
                 ? "border-amber-500 text-amber-400 bg-amber-500/10" 
                 : "border-transparent text-gray-500 hover:text-gray-300"
-            }`}
+            } ${crashEntry && tab.id === "bugchecks" ? "ring-1 ring-red-500/50" : ""}`}
           >
             {tab.icon} {tab.label}
+            {crashEntry && tab.id === "bugchecks" && (
+              <span className="ml-1 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            )}
           </button>
         ))}
       </div>

@@ -239,13 +239,30 @@ export const CrashScreen = ({
           </div>
         </div>
 
-        {/* Restart button */}
-        <button
-          onClick={onReboot}
-          className="px-8 py-3 bg-white/20 hover:bg-white/30 text-white font-semibold transition-colors text-lg"
-        >
-          Restart now
-        </button>
+        {/* Action buttons */}
+        <div className="flex gap-4">
+          <button
+            onClick={onReboot}
+            className="px-8 py-3 bg-white/20 hover:bg-white/30 text-white font-semibold transition-colors text-lg"
+          >
+            Restart now
+          </button>
+          <button
+            onClick={() => {
+              // Store crash data for def-dev
+              localStorage.setItem('urbanshade_crash_entry', JSON.stringify({
+                stopCode: resolvedCrashData.stopCode,
+                process: resolvedCrashData.process,
+                module: resolvedCrashData.module || stopInfo.whatFailed,
+                timestamp: new Date().toISOString()
+              }));
+              window.location.href = "/def-dev?from=crash";
+            }}
+            className="px-8 py-3 bg-amber-500/30 hover:bg-amber-500/40 text-amber-200 font-semibold transition-colors text-lg border border-amber-500/50"
+          >
+            Debug Error
+          </button>
+        </div>
 
         {/* Debug info at bottom */}
         <div className="absolute bottom-8 left-16 right-16 text-xs font-mono opacity-50">

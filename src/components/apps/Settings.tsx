@@ -313,9 +313,13 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
                         onCheckedChange={(checked) => {
                           setDeveloperMode(checked);
                           handleSave("settings_developer_mode", checked);
-                          toast.success(checked ? "Developer Mode enabled - Refreshing..." : "Developer Mode disabled");
                           if (checked) {
-                            setTimeout(() => window.location.reload(), 500);
+                            toast.success("Developer Mode enabled - Opening DEF-DEV...");
+                            // Open def-dev in new window first, then reload
+                            window.open("/def-dev", "_blank");
+                            setTimeout(() => window.location.reload(), 800);
+                          } else {
+                            toast.success("Developer Mode disabled");
                           }
                         }} 
                       />

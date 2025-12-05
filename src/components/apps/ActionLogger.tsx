@@ -15,32 +15,12 @@ export const ActionLogger = () => {
   const [autoScroll, setAutoScroll] = useState(true);
 
   useEffect(() => {
-    // Check localStorage integrity and log errors
-    const checkStorageIntegrity = () => {
-      const criticalKeys = [
-        'urbanshade_installed_apps',
-        'urbanshade_install_type',
-        'settings_developer_mode',
-        'urbanshade_notifications',
-        'urbanshade_virtual_fs'
-      ];
-
-      criticalKeys.forEach(key => {
-        if (localStorage.getItem(key) === null) {
-          addLog("ERROR", `${ERROR_TYPES.FILE_NOT_FOUND} - Key: ${key}`);
-        }
-      });
-    };
-
-    // Initial system logs
+    // Initial system logs - no error spam
     const initialLogs: LogEntry[] = [
       { time: formatTime(new Date()), type: "SYSTEM", message: "Action Logger initialized" },
       { time: formatTime(new Date()), type: "SYSTEM", message: `LocalStorage: ${localStorage.length} entries loaded` },
     ];
     setLogs(initialLogs);
-
-    // Check storage after a small delay
-    setTimeout(checkStorageIntegrity, 500);
 
     // Subscribe to action dispatcher
     const unsubscribe = actionDispatcher.subscribe((action: ActionEvent) => {
