@@ -1,4 +1,4 @@
-import { ArrowLeft, Terminal, Rocket, Folder, Map, Keyboard, HelpCircle, Zap, Waves, Shield } from "lucide-react";
+import { ArrowLeft, Terminal, Rocket, Folder, Map, Keyboard, HelpCircle, Zap, Waves, Shield, Bug } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Docs = () => {
@@ -74,6 +74,15 @@ const Docs = () => {
       color: "text-red-500",
       bgColor: "bg-red-500/10",
       borderColor: "border-red-500/30"
+    },
+    {
+      icon: Bug,
+      title: "DEF-DEV Console",
+      description: "Developer documentation. Real-time logging, action monitoring, storage inspection, and system debugging. For developers only.",
+      link: "/docs/def-dev",
+      color: "text-amber-400",
+      bgColor: "bg-amber-500/10",
+      borderColor: "border-amber-500/30"
     }
   ];
 

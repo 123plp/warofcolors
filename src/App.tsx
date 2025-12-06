@@ -14,6 +14,15 @@ import Advanced from "./pages/docs/Advanced";
 import Shortcuts from "./pages/docs/Shortcuts";
 import Troubleshooting from "./pages/docs/Troubleshooting";
 import DefDevDocs from "./pages/docs/DefDev";
+import DefDevIndex from "./pages/docs/defdev/Index";
+import DefDevSetup from "./pages/docs/defdev/Setup";
+import DefDevConsole from "./pages/docs/defdev/Console";
+import DefDevActions from "./pages/docs/defdev/Actions";
+import DefDevStorage from "./pages/docs/defdev/Storage";
+import DefDevTerminal from "./pages/docs/defdev/Terminal";
+import DefDevAdmin from "./pages/docs/defdev/Admin";
+import DefDevBugchecks from "./pages/docs/defdev/Bugchecks";
+import DefDevAPI from "./pages/docs/defdev/API";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,7 +49,15 @@ const App = () => (
         <Route path="/docs/advanced" element={<Advanced />} />
         <Route path="/docs/shortcuts" element={<Shortcuts />} />
         <Route path="/docs/troubleshooting" element={<Troubleshooting />} />
-        <Route path="/docs/def-dev" element={<DefDevDocs />} />
+        <Route path="/docs/def-dev" element={<DefDevIndex />} />
+        <Route path="/docs/def-dev/setup" element={<DefDevSetup />} />
+        <Route path="/docs/def-dev/console" element={<DefDevConsole />} />
+        <Route path="/docs/def-dev/actions" element={<DefDevActions />} />
+        <Route path="/docs/def-dev/storage" element={<DefDevStorage />} />
+        <Route path="/docs/def-dev/terminal" element={<DefDevTerminal />} />
+        <Route path="/docs/def-dev/admin" element={<DefDevAdmin />} />
+        <Route path="/docs/def-dev/bugchecks" element={<DefDevBugchecks />} />
+        <Route path="/docs/def-dev/api" element={<DefDevAPI />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>

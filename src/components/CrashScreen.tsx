@@ -183,19 +183,25 @@ export const CrashScreen = ({
           {/* CRITICAL: NOT A SIMULATION */}
           <div className="bg-white/15 border-2 border-white/30 rounded-lg p-5 max-w-2xl">
             <div className="flex items-start gap-4">
-              <AlertTriangle className="w-7 h-7 text-yellow-300 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-7 h-7 text-yellow-300 flex-shrink-0 mt-0.5 animate-pulse" />
               <div className="space-y-3">
                 <p className="text-base md:text-lg leading-relaxed font-semibold text-yellow-200">
-                  This is NOT a simulation — a real error occurred.
+                  ⚠️ This is NOT a simulation — a real error occurred in the system.
                 </p>
                 <p className="text-sm md:text-base leading-relaxed opacity-90">
-                  Something went wrong that the system couldn't recover from automatically. This could be 
-                  a bug in the code, an unexpected state, or a resource issue.
+                  The system encountered an error it could not recover from automatically. This is a genuine crash 
+                  that was triggered by something in the application — it's not fake, not part of gameplay, and not 
+                  intentionally caused unless you triggered it via DEF-DEV admin tools.
                 </p>
-                <div className="pt-2 border-t border-white/20">
+                <div className="space-y-2 pt-3 border-t border-white/20">
+                  <p className="text-xs md:text-sm opacity-80">
+                    <strong className="text-yellow-200">Why did this happen?</strong> Possible causes include: a bug in the code, 
+                    corrupted system state, a component entering an invalid state, memory issues, or an unhandled exception.
+                  </p>
                   <p className="text-xs md:text-sm opacity-70">
                     <strong>What you can do:</strong> Click "Restart now" to reboot the system. If this keeps 
-                    happening, try entering Recovery Mode (F2 during boot) or report the issue via Debug Error.
+                    happening, try entering Recovery Mode (F2 during boot), clearing localStorage, or report the issue 
+                    via Debug Error so developers can investigate.
                   </p>
                 </div>
               </div>

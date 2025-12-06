@@ -5,8 +5,8 @@ import { Sparkles, Check } from "lucide-react";
 
 export const ChangelogDialog = () => {
   const [open, setOpen] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState("2.2");
-  const currentVersion = "2.2";
+  const [selectedVersion, setSelectedVersion] = useState("2.3");
+  const currentVersion = "2.3";
 
   useEffect(() => {
     const lastSeenVersion = localStorage.getItem("urbanshade_last_seen_version");
@@ -21,6 +21,36 @@ export const ChangelogDialog = () => {
   };
 
   const changelogs: Record<string, Record<string, string[]>> = {
+    "2.3": {
+      "DEF-DEV Overhaul": [
+        "Complete DEF-DEV documentation with 8 dedicated sub-pages",
+        "New DEF-DEV Terminal with command queue support for remote execution",
+        "Enhanced bugcheck system with detailed error analysis",
+        "Action monitoring with persistence and consent system",
+        "Recovery image management with import/export/editing"
+      ],
+      "Bugcheck System": [
+        "New BugcheckScreen with severity levels and readable explanations",
+        "Automatic bugcheck logging to DEF-DEV console",
+        "System info capture including memory usage and browser details",
+        "Stack trace support for debugging"
+      ],
+      "Documentation": [
+        "DEF-DEV Setup & Access guide",
+        "Console Tab documentation",
+        "Actions Tab documentation",
+        "Storage Tab documentation",
+        "Terminal documentation",
+        "Admin Panel documentation",
+        "Bugchecks documentation",
+        "API Reference documentation"
+      ],
+      "Improvements": [
+        "Enhanced crash screen with detailed 'not a simulation' warning",
+        "Fixed desktop icon dragging issues - now uses grid layout",
+        "DEF-DEV link added to main documentation page"
+      ]
+    },
     "2.2": {
       "New Features": [
         "Added comprehensive Documentation System with 7 detailed guide pages",

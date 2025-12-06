@@ -108,29 +108,33 @@ export const BugcheckScreen = ({ bugcheck, onRestart, onReportToDev }: BugcheckS
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-[#1a0505] via-[#0d0d0d] to-[#1a0505] text-gray-100 flex flex-col font-mono z-[9999] overflow-hidden">
-      {/* Animated background effect */}
+      {/* Aggressive animated background for stress effect */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,50,50,0.1) 2px, rgba(255,50,50,0.1) 4px)'
+        <div className="absolute inset-0 opacity-[0.05]" style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,50,50,0.15) 2px, rgba(255,50,50,0.15) 4px)'
         }} />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent animate-pulse" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500/80 via-red-400 to-red-500/80 animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-red-500/60 via-red-400 to-red-500/60 animate-pulse" />
+        {/* Flickering effect */}
+        <div className="absolute inset-0 bg-red-500/5 animate-pulse" style={{ animationDuration: '0.15s' }} />
       </div>
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-red-900/60 via-red-800/40 to-red-900/60 border-b border-red-500/40 px-6 py-5">
+      {/* Header - more alarming */}
+      <div className="bg-gradient-to-r from-red-900/80 via-red-800/60 to-red-900/80 border-b-2 border-red-500/60 px-6 py-5">
         <div className="max-w-4xl mx-auto flex items-center gap-5">
           <div className="relative">
-            <div className="w-16 h-16 rounded-xl bg-red-500/10 border-2 border-red-500/60 flex items-center justify-center">
-              <Bug className="w-8 h-8 text-red-400" />
+            <div className="w-20 h-20 rounded-xl bg-red-500/20 border-2 border-red-500 flex items-center justify-center animate-pulse">
+              <Bug className="w-10 h-10 text-red-400" />
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse" />
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full animate-ping" />
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold">!</div>
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-red-400 tracking-wide">SYSTEM BUGCHECK</h1>
-            <p className="text-sm text-red-300/70 mt-1">A critical error has occurred and the system was stopped</p>
+            <h1 className="text-3xl font-bold text-red-400 tracking-wide animate-pulse">⚠ SYSTEM BUGCHECK ⚠</h1>
+            <p className="text-sm text-red-300/80 mt-1">A critical error has occurred — the system has been stopped to prevent damage</p>
           </div>
-          <div className={`px-3 py-1.5 rounded-lg border ${getSeverityColor(readableInfo.severity)}`}>
-            <span className="text-xs font-bold">SEVERITY: {readableInfo.severity}</span>
+          <div className={`px-4 py-2 rounded-lg border-2 ${getSeverityColor(readableInfo.severity)} animate-pulse`}>
+            <span className="text-sm font-bold">SEVERITY: {readableInfo.severity}</span>
           </div>
         </div>
       </div>
@@ -139,32 +143,42 @@ export const BugcheckScreen = ({ bugcheck, onRestart, onReportToDev }: BugcheckS
       <div className="flex-1 overflow-auto">
         <div className="max-w-4xl mx-auto p-6 space-y-6">
           
-          {/* CRITICAL WARNING - NOT A SIMULATION */}
-          <div className="p-5 bg-red-900/30 border-2 border-red-500/50 rounded-xl">
+          {/* CRITICAL WARNING - MAXIMUM STRESS */}
+          <div className="p-6 bg-red-900/40 border-2 border-red-500/70 rounded-xl shadow-lg shadow-red-500/20 animate-pulse" style={{ animationDuration: '2s' }}>
             <div className="flex items-start gap-4">
-              <AlertTriangle className="w-8 h-8 text-red-400 flex-shrink-0 animate-pulse" />
-              <div className="space-y-2">
-                <h2 className="text-lg font-bold text-red-400">This is NOT a simulation</h2>
-                <p className="text-sm text-red-200/80 leading-relaxed">
-                  A real error occurred in the system. This bugcheck screen was triggered because something went wrong
-                  that couldn't be recovered from automatically. The error has been logged and can be reported for debugging.
+              <div className="relative">
+                <AlertTriangle className="w-10 h-10 text-red-400 flex-shrink-0 animate-bounce" style={{ animationDuration: '0.5s' }} />
+              </div>
+              <div className="space-y-3">
+                <h2 className="text-xl font-bold text-red-400">⚠️ THIS IS NOT A SIMULATION ⚠️</h2>
+                <p className="text-base text-red-200 leading-relaxed font-medium">
+                  <strong>A REAL ERROR occurred in the system.</strong> This is NOT part of the game, NOT a prank, 
+                  and NOT intentional (unless you triggered it via DEF-DEV admin tools).
                 </p>
-                <p className="text-xs text-red-300/60 mt-2">
-                  If you can reproduce this error, please note the steps that led to it before reporting.
+                <p className="text-sm text-red-300/80 leading-relaxed">
+                  The system detected a condition that would have caused instability, data corruption, or a crash 
+                  if allowed to continue. To protect your data and the application state, execution was halted.
                 </p>
+                <div className="p-3 bg-black/40 rounded-lg border border-red-500/30 mt-2">
+                  <p className="text-xs text-red-300/70 leading-relaxed">
+                    <strong className="text-red-400">Why are you seeing this?</strong> Something in the code encountered 
+                    an unrecoverable state. This could be a bug, corrupted data, a browser issue, or an edge case we didn't 
+                    anticipate. <strong>Please report this</strong> — it helps us fix the issue for everyone.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Error Code Display */}
+          {/* Error Code Display - More prominent */}
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-5 bg-black/50 border border-red-500/30 rounded-xl">
+            <div className="p-5 bg-black/60 border-2 border-red-500/50 rounded-xl">
               <div className="flex items-center gap-2 mb-3">
-                <FileWarning className="w-4 h-4 text-red-400" />
-                <span className="text-xs text-red-400/70 uppercase tracking-wider font-semibold">Bugcheck Code</span>
+                <FileWarning className="w-5 h-5 text-red-400" />
+                <span className="text-xs text-red-400 uppercase tracking-wider font-bold">BUGCHECK CODE</span>
               </div>
-              <div className="text-2xl font-bold text-red-400 font-mono break-all">{bugcheck.code}</div>
-              <div className="text-sm text-gray-400 mt-2">{readableInfo.title}</div>
+              <div className="text-3xl font-bold text-red-400 font-mono break-all animate-pulse">{bugcheck.code}</div>
+              <div className="text-base text-gray-300 mt-2 font-semibold">{readableInfo.title}</div>
             </div>
 
             <div className="p-5 bg-black/50 border border-white/10 rounded-xl">
@@ -178,9 +192,23 @@ export const BugcheckScreen = ({ bugcheck, onRestart, onReportToDev }: BugcheckS
               {bugcheck.location && (
                 <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
                   <MapPin className="w-3 h-3" />
-                  <span>{bugcheck.location}</span>
+                  <span className="font-mono">{bugcheck.location}</span>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Memory dump style technical info */}
+          <div className="p-4 bg-black/70 border border-gray-700 rounded-xl font-mono text-xs overflow-x-auto">
+            <div className="text-gray-500 mb-2">*** BUGCHECK MEMORY DUMP ***</div>
+            <div className="space-y-1 text-gray-400">
+              <div>STOP: 0x{bugcheck.code.split('').map(c => c.charCodeAt(0).toString(16)).join('').toUpperCase().slice(0, 8)}</div>
+              <div>PROCESS: {bugcheck.location || 'system.exe'}</div>
+              <div>TIME: {bugcheck.timestamp}</div>
+              <div>BUILD: UrbanShade OS 22621.2428</div>
+              {bugcheck.systemInfo && Object.entries(bugcheck.systemInfo).map(([k, v]) => (
+                <div key={k}>{k.toUpperCase()}: {v}</div>
+              ))}
             </div>
           </div>
 
@@ -273,38 +301,42 @@ export const BugcheckScreen = ({ bugcheck, onRestart, onReportToDev }: BugcheckS
         </div>
       </div>
 
-      {/* Actions Footer */}
-      <div className="border-t border-white/10 bg-black/60 p-5">
+      {/* Actions Footer - More prominent */}
+      <div className="border-t-2 border-red-500/40 bg-gradient-to-r from-black/80 via-red-900/20 to-black/80 p-5">
         <div className="max-w-4xl mx-auto flex flex-wrap gap-3 justify-center">
           <button
             onClick={copyReport}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-sm"
+            className="flex items-center gap-2 px-5 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-sm border border-gray-600"
           >
             <Copy className="w-4 h-4" />
             Copy Report
           </button>
           <button
             onClick={downloadReport}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-sm"
+            className="flex items-center gap-2 px-5 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-sm border border-gray-600"
           >
             <Download className="w-4 h-4" />
             Download Report
           </button>
           <button
             onClick={onReportToDev}
-            className="flex items-center gap-2 px-5 py-2.5 bg-amber-600/80 hover:bg-amber-500 rounded-lg transition-colors text-white text-sm font-medium"
+            className="flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-500 rounded-lg transition-colors text-white text-sm font-bold border-2 border-amber-400"
           >
             <Bug className="w-4 h-4" />
-            Open DEF-DEV
+            Open DEF-DEV Console
           </button>
           <button
             onClick={onRestart}
-            className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 rounded-lg transition-colors text-white font-semibold text-sm"
+            className="flex items-center gap-2 px-8 py-3 bg-red-600 hover:bg-red-500 rounded-lg transition-colors text-white font-bold text-sm border-2 border-red-400 animate-pulse"
+            style={{ animationDuration: '2s' }}
           >
             <RefreshCw className="w-4 h-4" />
-            Restart System
+            RESTART SYSTEM
           </button>
         </div>
+        <p className="text-center text-xs text-gray-500 mt-4">
+          💡 Please report this bugcheck if you can reproduce it. Include the steps you took before this appeared.
+        </p>
       </div>
 
       {/* Footer Info */}
