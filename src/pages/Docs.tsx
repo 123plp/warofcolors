@@ -1,5 +1,6 @@
 import { ArrowLeft, Terminal, Rocket, Folder, Map, Keyboard, HelpCircle, Zap, Waves, Shield, Bug } from "lucide-react";
 import { Link } from "react-router-dom";
+import { DocSearch } from "@/components/DocSearch";
 
 const Docs = () => {
   const sections = [
@@ -90,15 +91,18 @@ const Docs = () => {
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-foreground">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <h1 className="text-xl font-bold text-primary">URBANSHADE Documentation</h1>
-          <Link 
-            to="/" 
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/20 border border-primary/30 text-primary hover:bg-primary/30 transition-colors text-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to App
-          </Link>
+          <div className="flex items-center gap-3">
+            <DocSearch />
+            <Link 
+              to="/" 
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/20 border border-primary/30 text-primary hover:bg-primary/30 transition-colors text-sm"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to App
+            </Link>
+          </div>
         </div>
       </header>
 
