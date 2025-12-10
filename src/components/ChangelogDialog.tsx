@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Check } from "lucide-react";
+import { Sparkles, Check, Cloud, PartyPopper } from "lucide-react";
 
 export const ChangelogDialog = () => {
   const [open, setOpen] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState("2.5");
-  const currentVersion = "2.5";
+  const [selectedVersion, setSelectedVersion] = useState("2.6");
+  const currentVersion = "2.6";
 
   useEffect(() => {
     const lastSeenVersion = localStorage.getItem("urbanshade_last_seen_version");
@@ -21,6 +21,29 @@ export const ChangelogDialog = () => {
   };
 
   const changelogs: Record<string, Record<string, string[]>> = {
+    "2.6": {
+      "Online Accounts": [
+        "Full Supabase-powered online account system",
+        "Sign up and sign in with email and password",
+        "Automatic settings sync every 2 minutes",
+        "Cloud backup of desktop icons, installed apps, and system settings",
+        "Online account management in Settings (when signed in)",
+        "Sync status indicator in taskbar",
+        "Manual sync button and last sync time display",
+        "Profile management with display name and avatar"
+      ],
+      "Settings Improvements": [
+        "New 'Online Account' section (visible when signed in)",
+        "View account info, email, and sync status",
+        "Sign out and switch to local mode",
+        "Force sync from cloud option"
+      ],
+      "System Enhancements": [
+        "Taskbar now shows cloud sync indicator when online",
+        "Improved sync reliability with change detection",
+        "Sync on page close to prevent data loss"
+      ]
+    },
     "2.5": {
       "UUR Manager": [
         "New UUR Manager app accessible from Desktop and Terminal",
@@ -184,7 +207,8 @@ export const ChangelogDialog = () => {
     }
   };
 
-  const changelog = changelogs[selectedVersion] || changelogs["2.2"];
+  const changelog = changelogs[selectedVersion] || changelogs["2.6"];
+  const isLatestVersion = selectedVersion === "2.6";
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -217,6 +241,22 @@ export const ChangelogDialog = () => {
           {selectedVersion === currentVersion && <span className="text-primary font-semibold">Latest Version</span>}
           {selectedVersion === "2.0" && <span className="text-yellow-500">Foundation Release - React Migration</span>}
         </div>
+
+        {/* Special v2.6 Announcement */}
+        {isLatestVersion && (
+          <div className="mb-6 p-6 rounded-xl bg-gradient-to-br from-primary/20 via-blue-500/10 to-purple-500/10 border border-primary/30">
+            <div className="flex items-center gap-3 mb-4">
+              <PartyPopper className="w-8 h-8 text-primary animate-bounce" />
+              <Cloud className="w-8 h-8 text-blue-400 animate-pulse" />
+            </div>
+            <h2 className="text-2xl font-black text-primary mb-3 leading-tight">
+              Hello, Users of Urbanshade OS! I am very, VERY proud to announce this. After a bit of help from AI, Hours of debugging, and nights crying in bed... ONLINE ACCOUNTS ARE NOW REAL.
+            </h2>
+            <p className="text-base text-foreground/90">
+              YOU READ THAT RIGHT! THE BIGGEST URBANSHADE OS UPDATE YET - ONLINE ACCOUNTS. THANKS TO SUPABASE FOR MAKING THIS POSSIBLE! THANK THEM VERY MUCH, AND THANK YOU, FOR USING THIS :D
+            </p>
+          </div>
+        )}
 
         <div className="space-y-6 py-4">
           {Object.entries(changelog).map(([section, items], sectionIndex) => (

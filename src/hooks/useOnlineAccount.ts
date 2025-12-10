@@ -147,6 +147,50 @@ export const useOnlineAccount = () => {
     setIsOnlineMode(false);
   };
 
+  // Update profile
+  const updateProfile = async (updates: { display_name?: string; avatar_url?: string }) => {
+    if (!user) return { error: new Error("Not signed in") };
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", user.id);
+
+      if (!error) {
+        // Refresh profile
+        await fetchProfile(user.id);
+      }
+
+      return { error };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
+  // Delete account
+  const deleteAccount = async () => {
+    if (!user) return { error: new Error("Not signed in") };
+
+    try {
+      // Delete synced settings first
+      await supabase.from("synced_settings").delete().eq("user_id", user.id);
+      
+      // Delete profile
+      await supabase.from("profiles").delete().eq("user_id", user.id);
+      
+      // Sign out (can't delete auth user from client side)
+      await signOut();
+      
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
   // Sync settings to cloud (only if online mode and not dev mode)
   const syncSettings = async () => {
     if (isDevMode || !isOnlineMode || !user) return;
@@ -160,7 +204,13 @@ export const useOnlineAccount = () => {
           theme: localStorage.getItem("settings_theme"),
           bg_gradient_start: localStorage.getItem("settings_bg_gradient_start"),
           bg_gradient_end: localStorage.getItem("settings_bg_gradient_end"),
-          animations: localStorage.getItem("settings_animations")
+          animations: localStorage.getItem("settings_animations"),
+          device_name: localStorage.getItem("settings_device_name"),
+          accent_color: localStorage.getItem("settings_accent_color"),
+          font_family: localStorage.getItem("settings_font_family"),
+          glass_opacity: localStorage.getItem("settings_glass_opacity"),
+          brightness: localStorage.getItem("settings_brightness"),
+          night_light: localStorage.getItem("settings_night_light"),
         }
       };
 
@@ -230,6 +280,8 @@ export const useOnlineAccount = () => {
     disableOnlineMode,
     syncSettings,
     loadCloudSettings,
-    fetchProfile
+    fetchProfile,
+    updateProfile,
+    deleteAccount
   };
 };

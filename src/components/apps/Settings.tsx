@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Settings as SettingsIcon, Monitor, Wifi, Volume2, HardDrive, Users, Clock, Shield, Palette, Accessibility, Bell, Power, Globe, Search, Upload, UserPlus, AlertTriangle, Download, ChevronDown, Code, FileText, Type } from "lucide-react";
+import { Settings as SettingsIcon, Monitor, Wifi, Volume2, HardDrive, Users, Clock, Shield, Palette, Accessibility, Bell, Power, Globe, Search, Upload, UserPlus, AlertTriangle, Download, ChevronDown, Code, FileText, Type, Cloud, RefreshCw, LogOut, Trash2, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,19 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { saveState, loadState } from "@/lib/persistence";
 import { toast } from "sonner";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
+import { useOnlineAccount } from "@/hooks/useOnlineAccount";
+import { useAutoSync } from "@/hooks/useAutoSync";
 
 export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
   const { settings, updateSetting, resetToDefaults } = useSystemSettings();
+  const { user, profile, isOnlineMode, signOut, updateProfile, loadCloudSettings } = useOnlineAccount();
+  const { lastSyncTime, isSyncing, manualSync, isEnabled: syncEnabled } = useAutoSync();
+  
   const [selectedCategory, setSelectedCategory] = useState("system");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFactoryResetDialog, setShowFactoryResetDialog] = useState(false);
   const [showAddAccountDialog, setShowAddAccountDialog] = useState(false);
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [newAccountUsername, setNewAccountUsername] = useState("");
   const [newAccountPassword, setNewAccountPassword] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -911,6 +917,82 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
               <p className="text-muted-foreground mb-6">Manage user accounts and sign-in options</p>
             </div>
 
+            {/* Online Account Section - Only visible when signed in */}
+            {isOnlineMode && user && (
+              <Card className="p-6 border-blue-500/30 bg-blue-500/5">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <Cloud className="w-5 h-5 text-blue-400" />
+                  Online Account
+                </h3>
+                
+                <div className="space-y-4">
+                  {/* Account Info */}
+                  <div className="flex items-center gap-4 p-4 bg-black/20 rounded-lg">
+                    <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <Cloud className="w-7 h-7 text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-blue-400">{profile?.display_name || profile?.username || "Online User"}</div>
+                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                      <div className="text-xs text-green-400 mt-1">● Signed in</div>
+                    </div>
+                  </div>
+
+                  {/* Sync Status */}
+                  <div className="p-4 bg-black/20 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Cloud Sync</span>
+                      <span className={`text-xs px-2 py-1 rounded ${syncEnabled ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                        {syncEnabled ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-3">
+                      Last synced: {lastSyncTime ? lastSyncTime.toLocaleTimeString() : 'Never'}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => manualSync()}
+                        disabled={isSyncing}
+                      >
+                        {isSyncing ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                        )}
+                        Sync Now
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={async () => {
+                          await loadCloudSettings();
+                          toast.success("Settings loaded from cloud");
+                          setTimeout(() => window.location.reload(), 1000);
+                        }}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Load from Cloud
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Sign Out */}
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    onClick={() => setShowSignOutDialog(true)}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              </Card>
+            )}
+
             <Card className="p-6">
               <h3 className="font-semibold mb-4">Your account</h3>
               <div className="flex items-center gap-4 mb-4">
@@ -919,7 +1001,9 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
                 </div>
                 <div>
                   <div className="font-bold">Administrator</div>
-                  <div className="text-sm text-muted-foreground">Local Account</div>
+                  <div className="text-sm text-muted-foreground">
+                    {isOnlineMode ? "Online Account" : "Local Account"}
+                  </div>
                 </div>
               </div>
               <Button variant="outline" className="w-full">Change account settings</Button>
@@ -1456,6 +1540,36 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
             </Button>
             <Button onClick={handleAddAccount}>
               Create Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sign Out Confirmation Dialog */}
+      <Dialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LogOut className="w-5 h-5 text-red-400" />
+              Sign Out of Online Account
+            </DialogTitle>
+            <DialogDescription>
+              You will be signed out of your online account. Your local data will remain, but cloud sync will be disabled until you sign in again.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSignOutDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={async () => {
+                await signOut();
+                setShowSignOutDialog(false);
+                toast.success("Signed out successfully");
+              }}
+            >
+              Sign Out
             </Button>
           </DialogFooter>
         </DialogContent>

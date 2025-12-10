@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Bell, Volume2, VolumeX, Power } from "lucide-react";
+import { Bell, Volume2, VolumeX, Power, Cloud, CloudOff, Loader2 } from "lucide-react";
 import { App } from "./Desktop";
 import { NotificationCenter } from "./NotificationCenter";
 import { ShutdownOptionsDialog } from "./ShutdownOptionsDialog";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useAutoSync } from "@/hooks/useAutoSync";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface WindowData {
   id: string;
@@ -38,6 +40,9 @@ export const Taskbar = ({
   const [powerMenuOpen, setPowerMenuOpen] = useState(false);
   const { unreadCount } = useNotifications();
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('settings_sound_enabled') !== 'false');
+  
+  // Auto-sync status
+  const { isEnabled: syncEnabled, isSyncing, lastSyncTime, manualSync } = useAutoSync();
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -52,6 +57,15 @@ export const Taskbar = ({
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
+
+  const formatLastSync = (date: Date | null) => {
+    if (!date) return "Never";
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
   const openWindows = windows.filter(w => !w.minimized);
@@ -121,6 +135,37 @@ export const Taskbar = ({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Cloud Sync Indicator */}
+          {syncEnabled && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => manualSync()}
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                      isSyncing 
+                        ? "text-blue-400 bg-blue-500/10" 
+                        : "text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10"
+                    }`}
+                    title="Cloud sync"
+                  >
+                    {isSyncing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Cloud className="w-4 h-4" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">
+                    {isSyncing ? "Syncing..." : `Last sync: ${formatLastSync(lastSyncTime)}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Click to sync now</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
