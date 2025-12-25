@@ -18,13 +18,15 @@ export const useMultipleDesktops = () => {
         return JSON.parse(stored);
       }
     } catch {}
-    // Default: one desktop
     return [{ id: 'desktop-1', name: 'Desktop 1', windowIds: [], createdAt: new Date().toISOString() }];
   });
 
   const [activeDesktopId, setActiveDesktopId] = useState<string>(() => {
     return localStorage.getItem(ACTIVE_DESKTOP_KEY) || 'desktop-1';
   });
+
+  const [switchDirection, setSwitchDirection] = useState<'left' | 'right' | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Save to localStorage
   useEffect(() => {
@@ -50,11 +52,21 @@ export const useMultipleDesktops = () => {
   }, [desktops.length]);
 
   const deleteDesktop = useCallback((desktopId: string) => {
-    if (desktops.length <= 1) return false; // Can't delete last desktop
+    if (desktops.length <= 1) return false;
     
-    setDesktops(prev => prev.filter(d => d.id !== desktopId));
+    // Get windows from deleted desktop to move to another desktop
+    const deletedDesktop = desktops.find(d => d.id === desktopId);
+    const windowsToMove = deletedDesktop?.windowIds || [];
     
-    // Switch to another desktop if deleting active
+    setDesktops(prev => {
+      const remaining = prev.filter(d => d.id !== desktopId);
+      // Move windows to first remaining desktop
+      if (windowsToMove.length > 0 && remaining.length > 0) {
+        remaining[0].windowIds = [...remaining[0].windowIds, ...windowsToMove];
+      }
+      return remaining;
+    });
+    
     if (activeDesktopId === desktopId) {
       const remaining = desktops.filter(d => d.id !== desktopId);
       if (remaining.length > 0) {
@@ -65,12 +77,25 @@ export const useMultipleDesktops = () => {
   }, [desktops, activeDesktopId]);
 
   const switchDesktop = useCallback((desktopId: string) => {
-    if (desktops.some(d => d.id === desktopId)) {
+    if (!desktops.some(d => d.id === desktopId)) return false;
+    if (desktopId === activeDesktopId) return true;
+    
+    // Determine direction for animation
+    const currentIndex = desktops.findIndex(d => d.id === activeDesktopId);
+    const targetIndex = desktops.findIndex(d => d.id === desktopId);
+    setSwitchDirection(targetIndex > currentIndex ? 'left' : 'right');
+    setIsAnimating(true);
+    
+    setTimeout(() => {
       setActiveDesktopId(desktopId);
-      return true;
-    }
-    return false;
-  }, [desktops]);
+      setTimeout(() => {
+        setIsAnimating(false);
+        setSwitchDirection(null);
+      }, 200);
+    }, 150);
+    
+    return true;
+  }, [desktops, activeDesktopId]);
 
   const renameDesktop = useCallback((desktopId: string, newName: string) => {
     setDesktops(prev => prev.map(d => 
@@ -107,23 +132,36 @@ export const useMultipleDesktops = () => {
     return desktops.find(d => d.windowIds.includes(windowId)) || null;
   }, [desktops]);
 
+  // Window is visible on active desktop if:
+  // 1. It's explicitly assigned to active desktop
+  // 2. It's NOT assigned to any desktop (unassigned = visible on active only)
   const isWindowOnActiveDesktop = useCallback((windowId: string): boolean => {
-    return activeDesktop.windowIds.includes(windowId) || 
-           !desktops.some(d => d.windowIds.includes(windowId)); // Window not assigned to any desktop = visible everywhere
-  }, [activeDesktop, desktops]);
+    const assignedDesktop = desktops.find(d => d.windowIds.includes(windowId));
+    // If window is assigned to a desktop, only show on that desktop
+    if (assignedDesktop) {
+      return assignedDesktop.id === activeDesktopId;
+    }
+    // Unassigned windows are visible everywhere (legacy behavior for backwards compatibility)
+    return true;
+  }, [activeDesktop, desktops, activeDesktopId]);
 
-  // Switch desktops with keyboard shortcuts
   const switchToNextDesktop = useCallback(() => {
     const currentIndex = desktops.findIndex(d => d.id === activeDesktopId);
     const nextIndex = (currentIndex + 1) % desktops.length;
-    setActiveDesktopId(desktops[nextIndex].id);
-  }, [desktops, activeDesktopId]);
+    switchDesktop(desktops[nextIndex].id);
+  }, [desktops, activeDesktopId, switchDesktop]);
 
   const switchToPreviousDesktop = useCallback(() => {
     const currentIndex = desktops.findIndex(d => d.id === activeDesktopId);
     const prevIndex = (currentIndex - 1 + desktops.length) % desktops.length;
-    setActiveDesktopId(desktops[prevIndex].id);
-  }, [desktops, activeDesktopId]);
+    switchDesktop(desktops[prevIndex].id);
+  }, [desktops, activeDesktopId, switchDesktop]);
+
+  // Get windows count per desktop
+  const getDesktopWindowCount = useCallback((desktopId: string): number => {
+    const desktop = desktops.find(d => d.id === desktopId);
+    return desktop?.windowIds.length || 0;
+  }, [desktops]);
 
   return {
     desktops,
@@ -139,6 +177,9 @@ export const useMultipleDesktops = () => {
     getWindowDesktop,
     isWindowOnActiveDesktop,
     switchToNextDesktop,
-    switchToPreviousDesktop
+    switchToPreviousDesktop,
+    getDesktopWindowCount,
+    switchDirection,
+    isAnimating
   };
 };

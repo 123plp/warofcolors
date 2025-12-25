@@ -94,7 +94,7 @@ const SupabaseConnectivityChecker = ({ currentRoute }: SupabaseConnectivityCheck
       style={{ zIndex: 999999 }}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm pointer-events-none" />
       
       {/* Warning Card */}
       <div className="relative bg-gradient-to-br from-red-950 via-slate-900 to-slate-950 border border-red-500/50 rounded-2xl p-8 max-w-md w-full shadow-2xl shadow-red-500/20">
