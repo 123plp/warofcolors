@@ -1,4 +1,4 @@
-import { Terminal, Activity, Send, Database, HardDrive, Shield, Skull, Cloud, Gavel } from "lucide-react";
+import { Terminal, Activity, Send, Database, HardDrive, Shield, Skull, Cloud, Gavel, Cpu, Globe, Zap, Layers } from "lucide-react";
 import { TabId } from "./hooks/useDefDevState";
 
 interface DefDevTabsProps {
@@ -16,6 +16,10 @@ const DefDevTabs = ({ selectedTab, onTabChange, bugcheckCount, crashEntry }: Def
     { id: "storage" as TabId, label: "Storage", icon: Database, color: "blue" },
     { id: "images" as TabId, label: "Recovery", icon: HardDrive, color: "orange" },
     { id: "bugchecks" as TabId, label: `Bugchecks${bugcheckCount > 0 ? ` (${bugcheckCount})` : ''}`, icon: Shield, color: "red" },
+    { id: "performance" as TabId, label: "Performance", icon: Cpu, color: "teal" },
+    { id: "network" as TabId, label: "Network", icon: Globe, color: "sky" },
+    { id: "events" as TabId, label: "Events", icon: Zap, color: "yellow" },
+    { id: "components" as TabId, label: "Components", icon: Layers, color: "indigo" },
     { id: "supabase" as TabId, label: "Supabase", icon: Cloud, color: "emerald" },
     { id: "fakemod" as TabId, label: "FakeMod", icon: Gavel, color: "rose" },
     { id: "admin" as TabId, label: "Admin", icon: Skull, color: "amber" },

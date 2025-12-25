@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lock, Terminal, User, ChevronUp } from "lucide-react";
+import { Lock, Terminal, User, ChevronUp, Eye, EyeOff, Cloud, Wifi } from "lucide-react";
 
 interface LockScreenProps {
   onUnlock: () => void;
@@ -10,6 +10,7 @@ export const LockScreen = ({ onUnlock, username = "Administrator" }: LockScreenP
   const [time, setTime] = useState(new Date());
   const [password, setPassword] = useState("");
   const [showPasswordField, setShowPasswordField] = useState(false);
+  const [showPasswordVisible, setShowPasswordVisible] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -102,14 +103,23 @@ export const LockScreen = ({ onUnlock, username = "Administrator" }: LockScreenP
           <form onSubmit={handleUnlock} className="animate-fade-in">
             <div className="relative">
               <input
-                type="password"
+                type={showPasswordVisible ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-72 px-5 py-3 bg-background/50 backdrop-blur-sm border border-border/50 rounded-full text-foreground text-center focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+                placeholder="Enter password or PIN"
+                className={`w-72 px-5 py-3 bg-background/50 backdrop-blur-sm border border-border/50 rounded-full text-foreground text-center focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all ${
+                  error ? 'animate-shake border-destructive' : ''
+                }`}
                 autoFocus
                 disabled={loading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPasswordVisible(!showPasswordVisible)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPasswordVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
               {password && (
                 <button
                   type="submit"

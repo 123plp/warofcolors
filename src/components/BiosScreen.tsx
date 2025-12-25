@@ -48,17 +48,17 @@ export const BiosScreen = ({ onExit }: BiosScreenProps) => {
     <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-2 gap-6">
         {/* System Information Card */}
-        <div className="bg-gradient-to-br from-[#0078D7]/20 to-[#0063B1]/20 border border-[#0078D7]/50 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/50 rounded-lg p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-[#0078D7]/30 rounded-lg flex items-center justify-center">
-              <Cpu className="w-6 h-6 text-[#0078D7]" />
+            <div className="w-10 h-10 bg-primary/30 rounded-lg flex items-center justify-center">
+              <Cpu className="w-6 h-6 text-primary" />
             </div>
             <h3 className="text-lg font-bold">System Information</h3>
           </div>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-400">UEFI Version:</span>
-              <span className="font-mono text-[#0078D7]">2.2.0</span>
+              <span className="font-mono text-primary">2.9.0</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Processor:</span>
@@ -76,10 +76,10 @@ export const BiosScreen = ({ onExit }: BiosScreenProps) => {
         </div>
 
         {/* Memory Card */}
-        <div className="bg-gradient-to-br from-[#0078D7]/20 to-[#0063B1]/20 border border-[#0078D7]/50 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/50 rounded-lg p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-[#0078D7]/30 rounded-lg flex items-center justify-center">
-              <Zap className="w-6 h-6 text-[#0078D7]" />
+            <div className="w-10 h-10 bg-primary/30 rounded-lg flex items-center justify-center">
+              <Zap className="w-6 h-6 text-primary" />
             </div>
             <h3 className="text-lg font-bold">Memory</h3>
           </div>
@@ -104,10 +104,10 @@ export const BiosScreen = ({ onExit }: BiosScreenProps) => {
         </div>
 
         {/* Storage Card */}
-        <div className="bg-gradient-to-br from-[#0078D7]/20 to-[#0063B1]/20 border border-[#0078D7]/50 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/50 rounded-lg p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-[#0078D7]/30 rounded-lg flex items-center justify-center">
-              <HardDrive className="w-6 h-6 text-[#0078D7]" />
+            <div className="w-10 h-10 bg-primary/30 rounded-lg flex items-center justify-center">
+              <HardDrive className="w-6 h-6 text-primary" />
             </div>
             <h3 className="text-lg font-bold">Storage Devices</h3>
           </div>
@@ -115,7 +115,7 @@ export const BiosScreen = ({ onExit }: BiosScreenProps) => {
             <div>
               <div className="flex justify-between mb-1">
                 <span className="text-gray-400">NVMe SSD:</span>
-                <span className="font-mono text-[#0078D7]">Primary</span>
+                <span className="font-mono text-primary">Primary</span>
               </div>
               <div className="text-xs text-gray-500">URBANSHADE-SSD-01 (2TB)</div>
             </div>
@@ -131,10 +131,10 @@ export const BiosScreen = ({ onExit }: BiosScreenProps) => {
         </div>
 
         {/* System Status Card */}
-        <div className="bg-gradient-to-br from-[#0078D7]/20 to-[#0063B1]/20 border border-[#0078D7]/50 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/50 rounded-lg p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-[#0078D7]/30 rounded-lg flex items-center justify-center">
-              <Thermometer className="w-6 h-6 text-[#0078D7]" />
+            <div className="w-10 h-10 bg-primary/30 rounded-lg flex items-center justify-center">
+              <Thermometer className="w-6 h-6 text-primary" />
             </div>
             <h3 className="text-lg font-bold">System Status</h3>
           </div>
@@ -159,9 +159,9 @@ export const BiosScreen = ({ onExit }: BiosScreenProps) => {
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-[#0078D7]/20 to-[#0063B1]/20 border border-[#0078D7]/50 rounded-lg p-4">
+      <div className="bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/50 rounded-lg p-4">
         <div className="flex items-center gap-3">
-          <Clock className="w-5 h-5 text-[#0078D7]" />
+          <Clock className="w-5 h-5 text-primary" />
           <div className="flex-1">
             <div className="text-sm text-gray-400">System Time</div>
             <div className="font-mono text-lg">{new Date().toLocaleString()}</div>

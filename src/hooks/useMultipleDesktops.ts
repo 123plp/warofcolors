@@ -134,16 +134,16 @@ export const useMultipleDesktops = () => {
 
   // Window is visible on active desktop if:
   // 1. It's explicitly assigned to active desktop
-  // 2. It's NOT assigned to any desktop (unassigned = visible on active only)
+  // 2. Unassigned windows are now HIDDEN by default (changed from visible everywhere)
   const isWindowOnActiveDesktop = useCallback((windowId: string): boolean => {
     const assignedDesktop = desktops.find(d => d.windowIds.includes(windowId));
     // If window is assigned to a desktop, only show on that desktop
     if (assignedDesktop) {
       return assignedDesktop.id === activeDesktopId;
     }
-    // Unassigned windows are visible everywhere (legacy behavior for backwards compatibility)
-    return true;
-  }, [activeDesktop, desktops, activeDesktopId]);
+    // Unassigned windows are now hidden by default - must be assigned to show
+    return false;
+  }, [desktops, activeDesktopId]);
 
   const switchToNextDesktop = useCallback(() => {
     const currentIndex = desktops.findIndex(d => d.id === activeDesktopId);
