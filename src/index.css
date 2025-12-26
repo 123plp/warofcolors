@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Urbanshade OS Design System */
+/* Urbanshade OS Design System v3.0 */
 
 @layer base {
   :root {
@@ -37,7 +37,7 @@
 
     --radius: 0.75rem;
 
-    /* Sidebar Colors (for future use) */
+    /* Sidebar Colors */
     --sidebar-background: 214 100% 3%;
     --sidebar-foreground: 192 100% 96%;
     --sidebar-primary: 186 100% 44%;
@@ -52,7 +52,34 @@
     --glass-strong: 214 90% 4% / 0.75;
     --glow: 186 100% 50%;
     --panel: 214 100% 3%;
-    --taskbar-height: 60px;
+    --taskbar-height: 52px;
+    
+    /* Acrylic/Blur settings */
+    --blur-intensity: 12px;
+    --animation-speed: 1;
+  }
+
+  .light {
+    --background: 210 20% 98%;
+    --foreground: 212 75% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 212 75% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 212 75% 10%;
+    --primary: 186 100% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 15% 92%;
+    --secondary-foreground: 212 75% 10%;
+    --muted: 210 15% 90%;
+    --muted-foreground: 212 30% 40%;
+    --accent: 186 100% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 212 20% 85%;
+    --input: 212 20% 85%;
+    --glass: 210 20% 98% / 0.75;
+    --glass-strong: 0 0% 100% / 0.85;
   }
 }
 
@@ -64,43 +91,218 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'JetBrains Mono', monospace;
-    background: radial-gradient(800px 420px at 12% 20%, hsl(186 100% 44% / 0.02), transparent 40%),
-                linear-gradient(160deg, hsl(212 75% 4%), hsl(214 80% 7%));
+    background: radial-gradient(800px 420px at 12% 20%, hsl(var(--glow) / 0.02), transparent 40%),
+                linear-gradient(160deg, hsl(var(--background)), hsl(var(--card)));
     background-attachment: fixed;
+  }
+
+  /* Smooth theme transitions */
+  :root {
+    transition: 
+      --background 0.3s ease,
+      --foreground 0.3s ease,
+      --primary 0.3s ease,
+      background-color 0.3s ease,
+      color 0.3s ease;
   }
 }
 
 @layer utilities {
+  /* Acrylic/Glass panels */
   .glass-panel {
-    background: linear-gradient(180deg, hsl(212 80% 6% / 0.75), hsl(214 90% 4% / 0.4));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid hsl(186 100% 44% / 0.08);
+    background: linear-gradient(180deg, hsl(var(--glass)), hsl(var(--glass-strong)));
+    backdrop-filter: blur(var(--blur-intensity));
+    -webkit-backdrop-filter: blur(var(--blur-intensity));
+    border: 1px solid hsl(var(--border));
+  }
+
+  .no-acrylic .glass-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: hsl(var(--card));
+  }
+
+  .glass-panel-strong {
+    background: hsl(var(--glass-strong));
+    backdrop-filter: blur(calc(var(--blur-intensity) * 1.5));
+    -webkit-backdrop-filter: blur(calc(var(--blur-intensity) * 1.5));
+    border: 1px solid hsl(var(--border));
   }
   
   .urbanshade-glow {
-    box-shadow: 0 0 40px hsl(186 100% 50% / 0.15);
+    box-shadow: 0 0 40px hsl(var(--glow) / 0.15);
   }
 
   .hover-scale {
     @apply transition-transform duration-200 hover:scale-105;
   }
 
+  /* Animation Utilities */
   .animate-fade-in {
-    animation: fade-in 0.5s ease-in;
+    animation: fade-in calc(0.3s * var(--animation-speed)) ease-out;
+  }
+
+  .animate-fade-out {
+    animation: fade-out calc(0.3s * var(--animation-speed)) ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scale-in calc(0.25s * var(--animation-speed)) cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-scale-out {
+    animation: scale-out calc(0.2s * var(--animation-speed)) ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slide-up calc(0.3s * var(--animation-speed)) cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-slide-down {
+    animation: slide-down calc(0.3s * var(--animation-speed)) cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right calc(0.3s * var(--animation-speed)) cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-slide-out-right {
+    animation: slide-out-right calc(0.25s * var(--animation-speed)) ease-out forwards;
   }
 
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-minimize {
+    animation: minimize-to-taskbar calc(0.3s * var(--animation-speed)) cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
+  .animate-restore {
+    animation: restore-from-taskbar calc(0.3s * var(--animation-speed)) cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Reduce motion preference */
+  .reduce-motion *,
+  .reduce-motion *::before,
+  .reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-all duration-200;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px hsl(var(--glow) / 0.2);
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300;
+  }
+  .hover-glow:hover {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
+
+  /* Interactive button hover */
+  .interactive-btn {
+    @apply transition-all duration-200 hover:bg-primary/10 active:scale-95;
+  }
 }
 
+/* Keyframes */
 @keyframes fade-in {
   from {
     opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
   }
 }
 
@@ -111,4 +313,101 @@
   50% {
     transform: translateY(-20px);
   }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(var(--glow) / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px hsl(var(--glow) / 0.4);
+  }
+}
+
+@keyframes minimize-to-taskbar {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) translateY(100vh);
+  }
+}
+
+@keyframes restore-from-taskbar {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(100vh);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Start menu slide animation */
+@keyframes start-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes start-menu-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+}
+
+.animate-start-menu-in {
+  animation: start-menu-in calc(0.25s * var(--animation-speed)) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-start-menu-out {
+  animation: start-menu-out calc(0.2s * var(--animation-speed)) ease-out forwards;
+}
+
+/* Window snap preview pulse */
+@keyframes snap-pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.animate-snap-pulse {
+  animation: snap-pulse 1s ease-in-out infinite;
+}
+
+/* Taskbar icon bounce */
+@keyframes icon-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-icon-bounce {
+  animation: icon-bounce 0.3s ease-out;
+}
+
+/* GPU acceleration hints */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }

@@ -210,16 +210,16 @@ export const Window = ({ title, children, zIndex, onClose, onFocus, onMinimize, 
     <>
       <div
         ref={windowRef}
-        className={`absolute rounded-xl glass-panel shadow-2xl flex flex-col overflow-hidden ${
-          isMinimized ? 'scale-95 opacity-0 translate-y-[50vh]' : 'animate-scale-in'
-        } ${isDragging ? '' : 'transition-all duration-200 ease-out'}`}
+        className={`absolute rounded-xl glass-panel shadow-2xl flex flex-col overflow-hidden gpu-accelerated ${
+          isMinimized ? 'animate-minimize' : 'animate-scale-in'
+        } ${isDragging ? '' : 'transition-all duration-200 ease-spring'}`}
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
           width: `${size.width}px`,
           height: `${size.height}px`,
           zIndex: Math.max(zIndex, 1000),
-          transformOrigin: 'bottom left'
+          transformOrigin: 'bottom center'
         }}
         onMouseDown={onFocus}
       >
