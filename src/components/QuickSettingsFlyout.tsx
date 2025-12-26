@@ -17,11 +17,14 @@ import {
   BluetoothOff,
   Plane,
   Battery,
-  BatteryCharging
+  BatteryCharging,
+  Clock
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useAutoSync } from "@/hooks/useAutoSync";
+import { useDoNotDisturb } from "@/hooks/useDoNotDisturb";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface QuickSettingsFlyoutProps {
   open: boolean;
@@ -39,9 +42,7 @@ export const QuickSettingsFlyout = ({ open, onClose, onOpenSettings }: QuickSett
   const [soundEnabled, setSoundEnabled] = useState(() => {
     return localStorage.getItem("settings_sound_enabled") !== "false";
   });
-  const [doNotDisturb, setDoNotDisturb] = useState(() => {
-    return localStorage.getItem("settings_dnd") === "true";
-  });
+  const { isDndEnabled, isScheduledDnd, toggleDnd, getTimeUntilEnd } = useDoNotDisturb();
   const [wifiEnabled, setWifiEnabled] = useState(true);
   const [bluetoothEnabled, setBluetoothEnabled] = useState(() => {
     return localStorage.getItem("settings_bluetooth") === "true";
@@ -72,10 +73,6 @@ export const QuickSettingsFlyout = ({ open, onClose, onOpenSettings }: QuickSett
   useEffect(() => {
     localStorage.setItem("settings_sound_enabled", soundEnabled.toString());
   }, [soundEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem("settings_dnd", doNotDisturb.toString());
-  }, [doNotDisturb]);
 
   useEffect(() => {
     localStorage.setItem("settings_bluetooth", bluetoothEnabled.toString());
@@ -186,13 +183,18 @@ export const QuickSettingsFlyout = ({ open, onClose, onOpenSettings }: QuickSett
           icon={Plane}
           label="Airplane"
         />
-        <QuickToggle
-          active={doNotDisturb}
-          onClick={() => setDoNotDisturb(!doNotDisturb)}
-          icon={Bell}
-          activeIcon={BellOff}
-          label="DND"
-        />
+        <div className="relative">
+          <QuickToggle
+            active={isDndEnabled}
+            onClick={toggleDnd}
+            icon={Bell}
+            activeIcon={BellOff}
+            label={isScheduledDnd ? "Sched." : "DND"}
+          />
+          {isScheduledDnd && (
+            <Clock className="absolute top-1 right-1 w-3 h-3 text-primary" />
+          )}
+        </div>
         <QuickToggle
           active={nightLight}
           onClick={() => setNightLight(!nightLight)}

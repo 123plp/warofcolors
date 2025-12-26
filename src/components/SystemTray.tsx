@@ -12,12 +12,15 @@ import {
   ChevronUp,
   Calendar,
   Bluetooth,
-  BluetoothOff
+  BluetoothOff,
+  Clock,
+  Moon
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useDoNotDisturb } from "@/hooks/useDoNotDisturb";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SystemTrayProps {
   onNotificationsClick: () => void;
@@ -41,8 +44,8 @@ export const SystemTray = ({ onNotificationsClick, onClockClick }: SystemTrayPro
   const [showHiddenIcons, setShowHiddenIcons] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   
-  const { unreadCount } = useNotifications();
-  const { isDndEnabled } = useDoNotDisturb();
+  const { unreadCount, persistentCount } = useNotifications();
+  const { isDndEnabled, isScheduledDnd, getTimeUntilEnd } = useDoNotDisturb();
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -177,22 +180,50 @@ export const SystemTray = ({ onNotificationsClick, onClockClick }: SystemTrayPro
       </div>
 
       {/* Notifications */}
-      <button
-        onClick={onNotificationsClick}
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all relative"
-        title="Notifications"
-      >
-        {isDndEnabled ? (
-          <BellOff className="w-4 h-4" />
-        ) : (
-          <Bell className="w-4 h-4" />
-        )}
-        {unreadCount > 0 && !isDndEnabled && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] rounded-full flex items-center justify-center animate-pulse font-bold">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onNotificationsClick}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all relative"
+            >
+              {isDndEnabled ? (
+                <div className="relative">
+                  <BellOff className="w-4 h-4" />
+                  {isScheduledDnd && (
+                    <Clock className="absolute -bottom-1 -right-1 w-2.5 h-2.5 text-primary" />
+                  )}
+                </div>
+              ) : (
+                <Bell className="w-4 h-4" />
+              )}
+              {unreadCount > 0 && !isDndEnabled && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] rounded-full flex items-center justify-center animate-pulse font-bold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+              {persistentCount > 0 && isDndEnabled && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-500 text-black text-[10px] rounded-full flex items-center justify-center font-bold">
+                  {persistentCount > 9 ? '9+' : persistentCount}
+                </span>
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isDndEnabled ? (
+              <div className="text-center">
+                <p className="font-medium flex items-center gap-1">
+                  <Moon className="w-3 h-3" />
+                  Do Not Disturb
+                </p>
+                <p className="text-xs text-muted-foreground">{getTimeUntilEnd()}</p>
+              </div>
+            ) : (
+              <p>{unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}</p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Clock with Calendar Dropdown */}
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
