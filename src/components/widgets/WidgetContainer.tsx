@@ -96,20 +96,21 @@ export const WidgetContainer = ({
       }}
       onClick={() => editMode && onSelect()}
     >
-      {/* Edit mode controls */}
+      {/* Edit mode controls - entire header is draggable */}
       {editMode && (
-        <div className="absolute top-0 left-0 right-0 h-7 bg-primary/20 backdrop-blur flex items-center justify-between px-2 z-10">
-          <div 
-            className="flex items-center gap-1 cursor-grab active:cursor-grabbing"
-            onMouseDown={handleMouseDown}
-          >
+        <div 
+          className="absolute top-0 left-0 right-0 h-8 bg-primary/20 backdrop-blur flex items-center justify-between px-2 z-10 cursor-grab active:cursor-grabbing"
+          onMouseDown={handleMouseDown}
+        >
+          <div className="flex items-center gap-1">
             <GripVertical className="w-3 h-3 text-muted-foreground" />
             <span className="text-xs text-muted-foreground truncate">{widget.type}</span>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); onCycleSize(); }}
-              className="p-0.5 hover:bg-primary/30 rounded transition-colors"
+              onMouseDown={(e) => e.stopPropagation()}
+              className="p-1 hover:bg-primary/30 rounded transition-colors"
               title="Cycle size"
             >
               {widget.size === 'small' ? (
@@ -122,7 +123,8 @@ export const WidgetContainer = ({
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onRemove(); }}
-              className="p-0.5 hover:bg-destructive/50 rounded transition-colors"
+              onMouseDown={(e) => e.stopPropagation()}
+              className="p-1 hover:bg-destructive/50 rounded transition-colors"
               title="Remove widget"
             >
               <X className="w-3 h-3" />
@@ -134,7 +136,7 @@ export const WidgetContainer = ({
       {/* Widget content */}
       <div className={cn(
         "w-full h-full",
-        editMode && "pt-7"
+        editMode && "pt-8"
       )}>
         {children}
       </div>
