@@ -26,13 +26,13 @@ const teamMembers: TeamMember[] = [
     title: "The Architect",
     startDate: "January 27th, 2025",
     contributions: [
-      { icon: <Code className="w-4 h-4" />, label: "95% of codebase" },
+      { icon: <Code className="w-4 h-4" />, label: "95% of the codebase" },
       { icon: <Crown className="w-4 h-4" />, label: "Founder of Urbanshade" },
       { icon: <Lightbulb className="w-4 h-4" />, label: "Vision & Direction" },
     ],
     bio: [
-      "Yo! I started this whole thing on January 27th, 2025, and honestly? It's been one heck of a ride. I've been the main one behind the keyboard, writing like 95% of the code, designing how everything works, and making sure this thing actually runs without catching fire. From late night coding sessions to \"why is this not working\" moments - I've been through it all.",
-      "Now look, I'm gonna be real with you - yes, there's been some AI involvement here. But honestly? It's more important to us to have fun building this, and a bunch of the code has still been made by us. We use AI as a tool, not a replacement. Every feature, every bugfix, every weird easter egg - there's a human behind it making decisions and having a blast doing it."
+      "Yo! I started this whole thing on January 27th, 2025, and honestly? It's been one hell of a ride. I've been the main one behind this, writing like 95% of the code, designing how everything works, and making sure this thing actually runs without... not working. From late night coding sessions to \"why is this not working\" moments - i have had those.",
+      "Now look, i'll be honest - yes, there's been some AI involvement here. But honestly? It's more important to us to have fun building this, and a bunch of the code has still been made by us. We use AI as a tool, not a thing that does everything for us. And if it was, it probably wouldnt be AS good. And yeah i really, REALLY like where this is headed"
     ],
     color: "from-yellow-500/20 to-amber-500/20",
     borderColor: "border-yellow-500/30",
@@ -51,8 +51,8 @@ const teamMembers: TeamMember[] = [
       { icon: <Lightbulb className="w-4 h-4" />, label: "Ideas & Feedback" },
     ],
     bio: [
-      "Been helping out since early 2025! I jumped in when things were already getting interesting and honestly couldn't resist being part of this madness. I've contributed to the cloud features, thrown in some code here and there, and spent way too many hours testing stuff that definitely shouldn't work (but somehow does).",
-      "My main thing? Ideas and feedback. You know how sometimes you're stuck on something and need fresh eyes? That's me. Plus, I get to break things on purpose and call it \"testing\" - best deal ever honestly. We're all about that transparency, so yeah, AI helped with some stuff, but we humans are definitely the ones having fun and making the weird decisions."
+      "Been helping out since early 2025! I jumped in when things were already getting interesting and honestly couldn't resist being part of my friends project. I've contributed to the cloud features, thrown in some code here and there, and spent way too many hours testing stuff that definitely shouldn't work (but somehow does).",
+      "My main thing? Ideas and feedback. You know how sometimes you're stuck on something and need fresh eyes? That's me. Plus, I get to break things on purpose and call it \"testing\" - best deal ever honestly. I'm all about transparency, so yeah, AI helped with some stuff, but we humans are definitely the ones having fun and making the weird decisions. I mean why the hell should a pation project have a cloud system? Ask Aswd not me lol."
     ],
     color: "from-slate-500/20 to-zinc-500/20",
     borderColor: "border-slate-500/30",
@@ -69,8 +69,8 @@ const teamMembers: TeamMember[] = [
       { icon: <Lightbulb className="w-4 h-4" />, label: "Bug hunting" },
     ],
     bio: [
-      "Yehaw! I'm the designated bug farmer around here. Joined the squad in 2025 and my job is simple: break stuff, find bugs, and report back. Think of me as the guy who clicks every button in the wrong order just to see what happens. Spoiler alert: sometimes things explode (metaphorically... mostly).",
-      "Quality assurance sounds fancy, but really I'm just here to make sure you don't run into the same disasters I create on purpose. And yeah, about the AI thing - we're being honest here. Some AI help happened, but let's be real, the chaos energy? That's 100% human-made. We're here to have fun and make something cool, not pretend we're perfect."
+      "Yehaw! I'm the designated bug finder around here. Joined in 2025 and my job is simple: break stuff, find bugs, and report back. Think of me as the guy who clicks every button in the wrong order just to see what happens. Spoiler alert: sometimes things explode (Not literarly... i hope).",
+      "Quality assurance sounds fancy, but really I'm just here to make sure you don't run into the same disasters I create on purpose. Also i like Simpsons for no reason other than yes.."
     ],
     color: "from-green-500/20 to-emerald-500/20",
     borderColor: "border-green-500/30",
@@ -121,7 +121,7 @@ const Team = () => {
           
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             A small but mighty crew of developers, testers, and dreamers who decided to build 
-            the most unnecessarily detailed fake OS on the internet. And we regret nothing. 🎮
+            the most unnecessarily detailed fake OS on the internet. And we regret nothing.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
@@ -156,7 +156,7 @@ const Team = () => {
         {/* Avatar Disclaimer */}
         <section className="text-center p-6 rounded-xl bg-amber-500/10 border border-amber-500/30">
           <p className="text-amber-400 text-lg font-medium">
-            🎮 Because we don't wanna leak our faces, we're gonna use our Roblox avatars lol
+            Because we don't wanna leak our faces, we're gonna use our Roblox avatars lol
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             Privacy first! Also, our avatars are way cooler than our actual faces. Trust us on this one.
@@ -167,7 +167,7 @@ const Team = () => {
         <section className="space-y-8">
           <h3 className="text-2xl font-bold text-center">The Crew</h3>
           <p className="text-center text-muted-foreground max-w-xl mx-auto">
-            These are the beautiful humans (represented by beautiful block-shaped avatars) 
+            These are the people (represented by our Roblox avatars) 
             who made this fever dream of an operating system possible.
           </p>
           
