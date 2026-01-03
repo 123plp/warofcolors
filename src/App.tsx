@@ -27,6 +27,7 @@ import DefDevDiagnostics from "./pages/docs/defdev/Diagnostics";
 import UURDocs from "./pages/docs/UUR";
 import Features from "./pages/docs/Features";
 import Safety from "./pages/docs/Safety";
+import Moderation from "./pages/docs/Moderation";
 import NotFound from "./pages/NotFound";
 import ModerationPanel from "./pages/ModerationPanel";
 import StatusPage from "./pages/Status";
@@ -79,6 +80,7 @@ const App = () => (
         <Route path="/docs/uur" element={<UURDocs />} />
         <Route path="/docs/features" element={<Features />} />
         <Route path="/docs/safety" element={<Safety />} />
+        <Route path="/docs/moderation" element={<Moderation />} />
         
         {/* Account Manager - nested routes */}
         <Route path="/acc-manage" element={<AccManageLayout />}>

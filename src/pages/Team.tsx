@@ -16,6 +16,7 @@ interface TeamMember {
   color: string;
   borderColor: string;
   textColor: string;
+  isCreator?: boolean;
 }
 
 const teamMembers: TeamMember[] = [
@@ -34,9 +35,10 @@ const teamMembers: TeamMember[] = [
       "Yo! I started this whole thing on January 27th, 2025, and honestly? It's been one hell of a ride. I've been the main one behind this, writing like 95% of the code, designing how everything works, and making sure this thing actually runs without... not working. From late night coding sessions to \"why is this not working\" moments - i have had those.",
       "Now look, i'll be honest - yes, there's been some AI involvement here. But honestly? It's more important to us to have fun building this, and a bunch of the code has still been made by us. We use AI as a tool, not a thing that does everything for us. And if it was, it probably wouldnt be AS good. And yeah i really, REALLY like where this is headed"
     ],
-    color: "from-yellow-500/20 to-amber-500/20",
-    borderColor: "border-yellow-500/30",
-    textColor: "text-yellow-500",
+    color: "from-yellow-500/30 to-amber-600/30",
+    borderColor: "border-yellow-500/50",
+    textColor: "text-yellow-400",
+    isCreator: true,
   },
   {
     name: "plplll",
@@ -175,22 +177,31 @@ const Team = () => {
             {teamMembers.map((member) => (
               <div 
                 key={member.name}
-                className={`p-8 rounded-xl bg-gradient-to-br ${member.color} border ${member.borderColor} transition-all group`}
+                className={`p-8 rounded-xl bg-gradient-to-br ${member.color} border-2 ${member.borderColor} transition-all group relative ${member.isCreator ? 'ring-2 ring-yellow-500/50 shadow-lg shadow-yellow-500/20' : ''}`}
               >
+                {/* Creator highlight badge */}
+                {member.isCreator && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-yellow-500 text-black text-sm font-bold flex items-center gap-2 shadow-lg">
+                    <Crown className="w-4 h-4" />
+                    THE CREATOR
+                  </div>
+                )}
+
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Avatar & Quick Info */}
                   <div className="flex flex-col items-center md:items-start md:w-48 shrink-0">
-                    <div className="w-32 h-32 mb-4 rounded-xl overflow-hidden border-2 border-white/20 shadow-lg bg-black/40">
+                    <div className={`w-32 h-32 mb-4 rounded-xl overflow-hidden border-2 shadow-lg bg-black/40 ${member.isCreator ? 'border-yellow-500 ring-2 ring-yellow-500/30' : 'border-white/20'}`}>
                       <img 
                         src={member.avatar} 
                         alt={member.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <h4 className={`text-xl font-bold ${member.textColor} text-center md:text-left`}>
+                    <h4 className={`text-xl font-bold ${member.textColor} text-center md:text-left flex items-center gap-2`}>
                       {member.name}
+                      {member.isCreator && <Crown className="w-5 h-5 text-yellow-400" />}
                     </h4>
-                    <span className="inline-block px-3 py-1 rounded-full bg-black/40 border border-white/10 text-xs text-muted-foreground mt-2">
+                    <span className={`inline-block px-3 py-1 rounded-full border text-xs mt-2 ${member.isCreator ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-black/40 border-white/10 text-muted-foreground'}`}>
                       {member.role}
                     </span>
                     <p className="text-sm text-muted-foreground italic mt-2">"{member.title}"</p>
@@ -201,7 +212,7 @@ const Team = () => {
                       {member.contributions.map((contrib, idx) => (
                         <div 
                           key={idx}
-                          className="flex items-center gap-2 text-sm bg-black/30 rounded-lg px-3 py-2 text-muted-foreground"
+                          className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 text-muted-foreground ${member.isCreator ? 'bg-yellow-500/10 border border-yellow-500/20' : 'bg-black/30'}`}
                         >
                           <span className={member.textColor}>{contrib.icon}</span>
                           <span>{contrib.label}</span>
@@ -212,6 +223,13 @@ const Team = () => {
 
                   {/* Bio */}
                   <div className="flex-1 space-y-4">
+                    {member.isCreator && (
+                      <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 mb-4">
+                        <p className="text-sm text-yellow-400 font-medium">
+                          👑 This is the person who started it all. The mastermind. The legend. The one who thought "let's make a fake underwater OS" and actually did it.
+                        </p>
+                      </div>
+                    )}
                     {member.bio.map((paragraph, idx) => (
                       <p key={idx} className="text-muted-foreground leading-relaxed">
                         {paragraph}
