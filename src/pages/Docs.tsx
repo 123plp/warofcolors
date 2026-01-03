@@ -168,6 +168,15 @@ const Docs = () => {
       color: "text-amber-400",
       bgColor: "bg-amber-500/10",
       borderColor: "border-amber-500/30"
+    },
+    {
+      icon: Shield,
+      title: "Safety & Badges",
+      description: "Stay safe online! Learn about user badges (Admin, Creator), how to spot scammers, and how to report rule breakers.",
+      link: "/docs/safety",
+      color: "text-green-400",
+      bgColor: "bg-green-500/10",
+      borderColor: "border-green-500/30"
     }
   ];
 

@@ -19,9 +19,11 @@ import { useAutoSync } from "@/hooks/useAutoSync";
 import { useWindowSnap, SnapZone } from "@/hooks/useWindowSnap";
 import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Database, Activity, Radio, FileBox, Terminal, Users, Wifi, Cpu, Mail, Globe, Music, Camera, Shield, MapPin, BookOpen, Zap, Wind, Calculator as CalcIcon, Lock, FileWarning, Grid3x3, ShoppingBag, StickyNote, Palette, Volume2, CloudRain, Clock as ClockIcon, Calendar, Newspaper, Key, HardDrive, FileArchive, FileText as PdfIcon, Sheet, Presentation, Video, Image, Mic, Gamepad2, MessageSquare, VideoIcon, MailOpen, FolderUp, TerminalSquare, Network, HardDrive as DiskIcon, Settings as SettingsIcon, Activity as PerformanceIcon, ScanLine, Languages, BookOpenCheck, Globe2, MapPinned, Telescope, Beaker, Calculator as PhysicsIcon, Fingerprint, Lock as EncryptionIcon, KeyRound, Download, Puzzle, Skull, Monitor, Package, Search } from "lucide-react";
+import { FileText, Database, Activity, Radio, FileBox, Terminal, Users, Wifi, Cpu, Mail, Globe, Music, Camera, Shield, MapPin, BookOpen, Zap, Wind, Calculator as CalcIcon, Lock, FileWarning, Grid3x3, ShoppingBag, StickyNote, Palette, Volume2, CloudRain, Clock as ClockIcon, Calendar, Newspaper, Key, HardDrive, FileArchive, FileText as PdfIcon, Sheet, Presentation, Video, Image, Mic, Gamepad2, MessageSquare, VideoIcon, MailOpen, FolderUp, TerminalSquare, Network, HardDrive as DiskIcon, Settings as SettingsIcon, Activity as PerformanceIcon, ScanLine, Languages, BookOpenCheck, Globe2, MapPinned, Telescope, Beaker, Calculator as PhysicsIcon, Fingerprint, Lock as EncryptionIcon, KeyRound, Download, Puzzle, Skull, Monitor, Package, Search, Star, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export interface App {
   id: string;
@@ -57,6 +59,7 @@ export const Desktop = ({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [taskViewOpen, setTaskViewOpen] = useState(false);
+  const [showVipWelcome, setShowVipWelcome] = useState(false);
   
   // Multiple desktops
   const { 
@@ -88,6 +91,26 @@ export const Desktop = ({
       });
     }
   }, [isOnlineMode, addNotification]);
+  
+  // Check for VIP status and show welcome popup if first time
+  useEffect(() => {
+    const checkVipStatus = async () => {
+      if (!isOnlineMode) return;
+      
+      const hasSeenVipWelcome = localStorage.getItem('vip_welcome_seen');
+      if (hasSeenVipWelcome) return;
+      
+      // TODO: When VIP table is implemented, check actual VIP status here
+      // For now, this is just the framework - Aswd needs to implement the vips table
+      // const { data: vipData } = await supabase.from('vips').select('*').eq('user_id', userId).single();
+      // if (vipData) {
+      //   setShowVipWelcome(true);
+      //   localStorage.setItem('vip_welcome_seen', 'true');
+      // }
+    };
+    
+    checkVipStatus();
+  }, [isOnlineMode]);
   
   // Load background gradient from settings
   const [bgGradient, setBgGradient] = useState(() => {
@@ -876,6 +899,64 @@ export const Desktop = ({
           onClose={() => setContextMenu(null)}
         />
       )}
+
+      {/* VIP Welcome Dialog */}
+      <Dialog open={showVipWelcome} onOpenChange={setShowVipWelcome}>
+        <DialogContent className="bg-gradient-to-br from-slate-900 via-purple-950/50 to-slate-900 border-purple-500/40">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500">
+                <Star className="w-6 h-6 text-white" />
+              </div>
+              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Welcome to VIP!
+              </span>
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              Congratulations! You've been recognized by Aswd and granted VIP status.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30">
+              <h4 className="font-bold text-purple-400 mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4" /> Your VIP Benefits
+              </h4>
+              <ul className="text-sm text-slate-300 space-y-2">
+                <li className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-purple-400" />
+                  <span><strong>Cloud Priority</strong> - Your requests get processed first</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-purple-400" />
+                  <span><strong>VIP Badge</strong> - Everyone can see you're trusted</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-purple-400" />
+                  <span><strong>Direct Line to Aswd</strong> - Skip the queue when messaging the creator</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-purple-400" />
+                  <span><strong>Overall Priority</strong> - You're at the front of the line</span>
+                </li>
+              </ul>
+            </div>
+            
+            <p className="text-sm text-muted-foreground text-center">
+              Thank you for being awesome! 💜
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              onClick={() => setShowVipWelcome(false)} 
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500"
+            >
+              Let's Go!
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

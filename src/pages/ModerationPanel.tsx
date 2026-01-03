@@ -6,7 +6,8 @@ import {
   Radio, Zap, Terminal, AlertOctagon, UserX, UserCheck, History,
   Settings, Database, Wifi, Globe, Server, ChevronDown, ChevronRight,
   TriangleAlert, ShieldAlert, ShieldCheck, Filter, Download, Trash2,
-  MessageSquare, Bell, Volume2, VolumeX, Cpu, HardDrive
+  MessageSquare, Bell, Volume2, VolumeX, Cpu, HardDrive, Crown, Megaphone,
+  UserCog, Send, Star, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ interface UserData {
   warnings: Array<{ reason: string; created_at: string }>;
   created_at: string;
   lastActive?: string;
+  isVip?: boolean;
 }
 
 interface StatusEntry {
@@ -47,7 +49,7 @@ interface StatusEntry {
 
 interface ActivityLog {
   id: string;
-  type: "login" | "logout" | "action" | "warning" | "ban" | "system";
+  type: "login" | "logout" | "action" | "warning" | "ban" | "system" | "broadcast" | "op";
   user?: string;
   message: string;
   timestamp: Date;
@@ -68,6 +70,84 @@ const personnelRankColors: Record<string, string> = {
   "Security": "text-blue-500 bg-blue-500/20 border-blue-500/30",
   "Admin": "text-red-500 bg-red-500/20 border-red-500/30",
 };
+
+// Demo data for non-admin viewers
+const DEMO_USERS: UserData[] = [
+  {
+    id: "demo-1",
+    user_id: "demo-user-1",
+    username: "DemoUser",
+    display_name: "Demo Test User",
+    role: "user",
+    clearance: 1,
+    isBanned: false,
+    warningsCount: 0,
+    warnings: [],
+    created_at: new Date().toISOString(),
+    isVip: false,
+  },
+  {
+    id: "demo-2",
+    user_id: "demo-user-2",
+    username: "BannedDemo",
+    display_name: "Banned Demo User",
+    role: "user",
+    clearance: 1,
+    isBanned: true,
+    banInfo: {
+      action_type: "ban",
+      reason: "Demo ban - This is a test account",
+      expires_at: null,
+      is_fake: false,
+    },
+    warningsCount: 2,
+    warnings: [
+      { reason: "Demo warning 1", created_at: new Date().toISOString() },
+      { reason: "Demo warning 2", created_at: new Date().toISOString() },
+    ],
+    created_at: new Date(Date.now() - 86400000 * 7).toISOString(),
+    isVip: false,
+  },
+  {
+    id: "demo-3",
+    user_id: "demo-user-3",
+    username: "WarnedDemo",
+    display_name: "Warned Demo User",
+    role: "user",
+    clearance: 2,
+    isBanned: false,
+    warningsCount: 1,
+    warnings: [{ reason: "Demo warning", created_at: new Date().toISOString() }],
+    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+    isVip: false,
+  },
+  {
+    id: "demo-4",
+    user_id: "demo-user-4",
+    username: "DemoAdmin",
+    display_name: "Demo Admin User",
+    role: "admin",
+    clearance: 5,
+    isBanned: false,
+    warningsCount: 0,
+    warnings: [],
+    created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+    isVip: false,
+  },
+  {
+    id: "demo-5",
+    user_id: "demo-user-5",
+    username: "DemoVIP",
+    display_name: "Demo VIP User",
+    role: "user",
+    clearance: 3,
+    isBanned: false,
+    warningsCount: 0,
+    warnings: [],
+    created_at: new Date(Date.now() - 86400000 * 14).toISOString(),
+    isVip: true,
+  },
+];
 
 // Hadal Blacksite themed status card
 const StatusCard = ({ status, onUpdate }: { status: StatusEntry; onUpdate: (id: string, status: string, message: string | null) => void }) => {
@@ -165,17 +245,32 @@ const StatusCard = ({ status, onUpdate }: { status: StatusEntry; onUpdate: (id: 
 };
 
 // User details panel
-const UserDetailsPanel = ({ user, onClose, onWarn, onBan, onUnban }: { 
+const UserDetailsPanel = ({ user, onClose, onWarn, onBan, onUnban, onOp, onDeop, onVip, onRevokeVip, isDemo }: { 
   user: UserData; 
   onClose: () => void;
   onWarn: () => void;
   onBan: () => void;
   onUnban: () => void;
+  onOp: () => void;
+  onDeop: () => void;
+  onVip: () => void;
+  onRevokeVip: () => void;
+  isDemo: boolean;
 }) => {
-  const rank = user.personnelRank || (user.role === 'admin' ? 'Admin' : 'Staff');
+  const rank = user.personnelRank || (user.role === 'admin' ? 'Admin' : user.isVip ? 'VIP' : 'Staff');
   
   return (
     <div className="fixed inset-y-0 right-0 w-96 bg-slate-950 border-l-2 border-cyan-500/30 shadow-2xl shadow-cyan-500/10 z-50 flex flex-col">
+      {/* Demo Mode Banner */}
+      {isDemo && (
+        <div className="px-4 py-2 bg-amber-500/20 border-b border-amber-500/30">
+          <div className="flex items-center gap-2 text-amber-400 text-xs font-mono">
+            <Eye className="w-3 h-3" />
+            DEMO MODE - Actions won't affect cloud
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="p-4 border-b border-slate-800 bg-gradient-to-r from-slate-900 to-slate-950">
         <div className="flex items-center justify-between mb-3">
@@ -203,6 +298,11 @@ const UserDetailsPanel = ({ user, onClose, onWarn, onBan, onUnban }: {
         <div className="space-y-4">
           {/* Status badges */}
           <div className="flex flex-wrap gap-2">
+            {user.isVip && (
+              <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-400 text-xs font-mono flex items-center gap-1 border border-purple-500/30">
+                <Star className="w-3 h-3" /> VIP
+              </span>
+            )}
             {user.isBanned && (
               <span className="px-2 py-1 rounded bg-red-500/20 text-red-400 text-xs font-mono flex items-center gap-1 border border-red-500/30">
                 <Ban className="w-3 h-3" /> BANNED
@@ -266,33 +366,70 @@ const UserDetailsPanel = ({ user, onClose, onWarn, onBan, onUnban }: {
       </ScrollArea>
 
       {/* Actions */}
-      {user.role !== 'admin' && (
-        <div className="p-4 border-t border-slate-800 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <Button 
-              onClick={onWarn}
-              className="bg-amber-600 hover:bg-amber-500 gap-1"
-            >
-              <AlertTriangle className="w-4 h-4" /> Warn
-            </Button>
-            {user.isBanned ? (
+      <div className="p-4 border-t border-slate-800 space-y-2">
+        {user.role !== 'admin' ? (
+          <>
+            <div className="grid grid-cols-2 gap-2">
               <Button 
-                onClick={onUnban}
-                className="bg-green-600 hover:bg-green-500 gap-1"
+                onClick={onWarn}
+                className="bg-amber-600 hover:bg-amber-500 gap-1"
               >
-                <CheckCircle className="w-4 h-4" /> Unban
+                <AlertTriangle className="w-4 h-4" /> Warn
+              </Button>
+              {user.isBanned ? (
+                <Button 
+                  onClick={onUnban}
+                  className="bg-green-600 hover:bg-green-500 gap-1"
+                >
+                  <CheckCircle className="w-4 h-4" /> Unban
+                </Button>
+              ) : (
+                <Button 
+                  onClick={onBan}
+                  className="bg-red-600 hover:bg-red-500 gap-1"
+                >
+                  <Ban className="w-4 h-4" /> Ban
+                </Button>
+              )}
+            </div>
+            
+            {/* VIP Button */}
+            {!user.isVip ? (
+              <Button 
+                onClick={onVip}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 gap-2"
+              >
+                <Star className="w-4 h-4" /> Grant VIP Status
               </Button>
             ) : (
               <Button 
-                onClick={onBan}
-                className="bg-red-600 hover:bg-red-500 gap-1"
+                onClick={onRevokeVip}
+                className="w-full bg-slate-600 hover:bg-slate-500 gap-2"
               >
-                <Ban className="w-4 h-4" /> Ban
+                <Star className="w-4 h-4" /> Revoke VIP Status
               </Button>
             )}
-          </div>
-        </div>
-      )}
+            
+            {/* OP Button */}
+            <Button 
+              onClick={onOp}
+              className="w-full bg-purple-600 hover:bg-purple-500 gap-2"
+            >
+              <Crown className="w-4 h-4" /> Grant Admin (OP)
+            </Button>
+          </>
+        ) : (
+          /* Demote button for admins (demo mode only) */
+          isDemo && (
+            <Button 
+              onClick={onDeop}
+              className="w-full bg-orange-600 hover:bg-orange-500 gap-2"
+            >
+              <UserCog className="w-4 h-4" /> Demote Admin (De-OP)
+            </Button>
+          )
+        )}
+      </div>
     </div>
   );
 };
@@ -306,6 +443,8 @@ const ActivityFeed = ({ activities }: { activities: ActivityLog[] }) => {
       case "warning": return <AlertTriangle className="w-3 h-3 text-amber-400" />;
       case "ban": return <Ban className="w-3 h-3 text-red-400" />;
       case "system": return <Terminal className="w-3 h-3 text-cyan-400" />;
+      case "broadcast": return <Megaphone className="w-3 h-3 text-purple-400" />;
+      case "op": return <Crown className="w-3 h-3 text-yellow-400" />;
       default: return <Activity className="w-3 h-3 text-slate-400" />;
     }
   };
@@ -327,6 +466,7 @@ const ModerationPanel = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [users, setUsers] = useState<UserData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
@@ -354,10 +494,14 @@ const ModerationPanel = () => {
   const [showWarnDialog, setShowWarnDialog] = useState(false);
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [showLockdownDialog, setShowLockdownDialog] = useState(false);
+  const [showOpDialog, setShowOpDialog] = useState(false);
+  const [showBroadcastDialog, setShowBroadcastDialog] = useState(false);
+  const [showVipDialog, setShowVipDialog] = useState(false);
   const [warnReason, setWarnReason] = useState("");
   const [banReason, setBanReason] = useState("");
   const [banDuration, setBanDuration] = useState<"1h" | "24h" | "7d" | "30d" | "perm">("24h");
   const [isFakeBan, setIsFakeBan] = useState(false);
+  const [broadcastMessage, setBroadcastMessage] = useState("");
 
   // Check admin status and fetch data
   useEffect(() => {
@@ -367,8 +511,16 @@ const ModerationPanel = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          toast.error("Please log in first");
-          navigate("/");
+          // No session - enter demo mode
+          setIsDemoMode(true);
+          setUsers(DEMO_USERS);
+          setActivities(prev => [{
+            id: Date.now().toString(),
+            type: "system",
+            message: "DEMO MODE: Not logged in - using test data",
+            timestamp: new Date()
+          }, ...prev]);
+          setIsLoading(false);
           return;
         }
 
@@ -378,8 +530,17 @@ const ModerationPanel = () => {
 
         if (response.error) {
           if (response.error.message?.includes('403') || response.error.message?.includes('Access denied')) {
-            toast.error("Access denied - Admin only");
-            navigate("/");
+            // Not admin - enter demo mode
+            setIsDemoMode(true);
+            setUsers(DEMO_USERS);
+            setActivities(prev => [{
+              id: Date.now().toString(),
+              type: "system",
+              message: "DEMO MODE: Not authorized - using test data",
+              timestamp: new Date()
+            }, ...prev]);
+            toast.info("Demo mode - actions won't affect cloud");
+            setIsLoading(false);
             return;
           }
           throw response.error;
@@ -398,8 +559,16 @@ const ModerationPanel = () => {
         
       } catch (error: any) {
         console.error("Admin check error:", error);
-        toast.error("Access denied");
-        navigate("/");
+        // Enter demo mode on error
+        setIsDemoMode(true);
+        setUsers(DEMO_USERS);
+        setActivities(prev => [{
+          id: Date.now().toString(),
+          type: "system",
+          message: "DEMO MODE: Connection error - using test data",
+          timestamp: new Date()
+        }, ...prev]);
+        toast.info("Demo mode enabled");
       } finally {
         setIsLoading(false);
       }
@@ -584,7 +753,228 @@ const ModerationPanel = () => {
     }, ...prev]);
   };
 
-  // Filter users
+  // Handle OP (grant admin)
+  const handleOp = async () => {
+    if (!selectedUser) return;
+    
+    if (isDemoMode) {
+      // Demo mode - just show local effect
+      const updatedUsers = users.map(u => 
+        u.id === selectedUser.id ? { ...u, role: 'admin' } : u
+      );
+      setUsers(updatedUsers);
+      toast.success(`[DEMO] OP granted to ${selectedUser.username}`);
+      setActivities(prev => [{
+        id: Date.now().toString(),
+        type: "op",
+        user: selectedUser.username,
+        message: `[DEMO] OP granted to @${selectedUser.username}`,
+        timestamp: new Date()
+      }, ...prev]);
+      setShowOpDialog(false);
+      setShowUserDetails(false);
+      return;
+    }
+    
+    try {
+      const response = await supabase.functions.invoke('admin-actions/op', {
+        method: 'POST',
+        body: { targetUserId: selectedUser.user_id }
+      });
+
+      if (response.error) throw response.error;
+      
+      toast.success(`Admin granted to ${selectedUser.username}`);
+      setActivities(prev => [{
+        id: Date.now().toString(),
+        type: "op",
+        user: selectedUser.username,
+        message: `👑 OP granted to @${selectedUser.username}`,
+        timestamp: new Date()
+      }, ...prev]);
+      setShowOpDialog(false);
+      setShowUserDetails(false);
+      fetchUsers();
+    } catch (error) {
+      toast.error("Failed to grant admin");
+    }
+  };
+
+  // Handle global broadcast
+  const handleBroadcast = async () => {
+    if (!broadcastMessage.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
+    
+    if (isDemoMode) {
+      toast.success(`[DEMO] Broadcast sent: "${broadcastMessage}"`);
+      setActivities(prev => [{
+        id: Date.now().toString(),
+        type: "broadcast",
+        message: `[DEMO] 📢 BROADCAST: ${broadcastMessage}`,
+        timestamp: new Date()
+      }, ...prev]);
+      setShowBroadcastDialog(false);
+      setBroadcastMessage("");
+      return;
+    }
+    
+    try {
+      const response = await supabase.functions.invoke('admin-actions/broadcast', {
+        method: 'POST',
+        body: { message: broadcastMessage }
+      });
+
+      if (response.error) throw response.error;
+      
+      toast.success("Global notification sent!");
+      setActivities(prev => [{
+        id: Date.now().toString(),
+        type: "broadcast",
+        message: `📢 GLOBAL BROADCAST: ${broadcastMessage}`,
+        timestamp: new Date()
+      }, ...prev]);
+      setShowBroadcastDialog(false);
+      setBroadcastMessage("");
+    } catch (error) {
+      toast.error("Failed to send broadcast");
+    }
+  };
+
+  // Demo mode action wrappers
+  const handleDemoWarn = () => {
+    if (!selectedUser || !warnReason) return;
+    
+    const updatedUsers = users.map(u => 
+      u.id === selectedUser.id 
+        ? { ...u, warningsCount: u.warningsCount + 1, warnings: [...u.warnings, { reason: warnReason, created_at: new Date().toISOString() }] } 
+        : u
+    );
+    setUsers(updatedUsers);
+    toast.success(`[DEMO] Warning issued to ${selectedUser.username}`);
+    setActivities(prev => [{
+      id: Date.now().toString(),
+      type: "warning",
+      user: selectedUser.username,
+      message: `[DEMO] Warning: @${selectedUser.username} - ${warnReason}`,
+      timestamp: new Date()
+    }, ...prev]);
+    setShowWarnDialog(false);
+    setWarnReason("");
+  };
+
+  const handleDemoBan = () => {
+    if (!selectedUser || !banReason) return;
+    
+    const updatedUsers = users.map(u => 
+      u.id === selectedUser.id 
+        ? { ...u, isBanned: true, banInfo: { action_type: 'ban', reason: banReason, expires_at: null, is_fake: isFakeBan } } 
+        : u
+    );
+    setUsers(updatedUsers);
+    toast.success(`[DEMO] ${isFakeBan ? 'Fake ban' : 'Ban'} issued to ${selectedUser.username}`);
+    setActivities(prev => [{
+      id: Date.now().toString(),
+      type: "ban",
+      user: selectedUser.username,
+      message: `[DEMO] ${isFakeBan ? 'FAKE BAN' : 'BAN'}: @${selectedUser.username} - ${banReason}`,
+      timestamp: new Date()
+    }, ...prev]);
+    setShowBanDialog(false);
+    setBanReason("");
+    setIsFakeBan(false);
+    setShowUserDetails(false);
+  };
+
+  const handleDemoUnban = (userId: string) => {
+    const user = users.find(u => u.user_id === userId);
+    const updatedUsers = users.map(u => 
+      u.user_id === userId ? { ...u, isBanned: false, banInfo: undefined } : u
+    );
+    setUsers(updatedUsers);
+    toast.success(`[DEMO] User unbanned`);
+    setActivities(prev => [{
+      id: Date.now().toString(),
+      type: "system",
+      user: user?.username,
+      message: `[DEMO] Unban: @${user?.username || 'Unknown'}`,
+      timestamp: new Date()
+    }, ...prev]);
+  };
+
+  // Handle demo de-op (demote admin)
+  const handleDemoDeop = () => {
+    if (!selectedUser) return;
+    
+    const updatedUsers = users.map(u => 
+      u.id === selectedUser.id ? { ...u, role: 'user' } : u
+    );
+    setUsers(updatedUsers);
+    toast.success(`[DEMO] Admin demoted: ${selectedUser.username}`);
+    setActivities(prev => [{
+      id: Date.now().toString(),
+      type: "system",
+      user: selectedUser.username,
+      message: `[DEMO] Admin demoted: @${selectedUser.username} is now a regular user`,
+      timestamp: new Date()
+    }, ...prev]);
+    setShowUserDetails(false);
+  };
+
+  // Handle VIP grant
+  const handleVip = async () => {
+    if (!selectedUser) return;
+    
+    if (isDemoMode) {
+      const updatedUsers = users.map(u => 
+        u.id === selectedUser.id ? { ...u, isVip: true } : u
+      );
+      setUsers(updatedUsers);
+      toast.success(`[DEMO] VIP status granted to ${selectedUser.username}`);
+      setActivities(prev => [{
+        id: Date.now().toString(),
+        type: "op",
+        user: selectedUser.username,
+        message: `[DEMO] ⭐ VIP granted to @${selectedUser.username}`,
+        timestamp: new Date()
+      }, ...prev]);
+      setShowVipDialog(false);
+      setShowUserDetails(false);
+      return;
+    }
+    
+    // TODO: Real implementation via edge function
+    toast.info("VIP functionality requires cloud implementation - see pending.md");
+    setShowVipDialog(false);
+  };
+
+  // Handle VIP revoke
+  const handleRevokeVip = () => {
+    if (!selectedUser) return;
+    
+    if (isDemoMode) {
+      const updatedUsers = users.map(u => 
+        u.id === selectedUser.id ? { ...u, isVip: false } : u
+      );
+      setUsers(updatedUsers);
+      toast.success(`[DEMO] VIP status revoked from ${selectedUser.username}`);
+      setActivities(prev => [{
+        id: Date.now().toString(),
+        type: "system",
+        user: selectedUser.username,
+        message: `[DEMO] VIP revoked: @${selectedUser.username}`,
+        timestamp: new Date()
+      }, ...prev]);
+      setShowUserDetails(false);
+      return;
+    }
+    
+    // TODO: Real implementation via edge function
+    toast.info("VIP functionality requires cloud implementation - see pending.md");
+  };
+
+
   const filteredUsers = users.filter(u => {
     const matchesSearch = u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.display_name?.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -611,24 +1001,43 @@ const ModerationPanel = () => {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <ShieldAlert className="w-20 h-20 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-red-500 mb-2 font-mono">ACCESS DENIED</h1>
-          <p className="text-slate-400 font-mono text-sm">Clearance level insufficient</p>
-          <p className="text-slate-600 font-mono text-xs mt-2">This incident has been logged</p>
-          <Button onClick={() => navigate("/")} className="mt-6 bg-slate-800 hover:bg-slate-700">
-            Return to Surface
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-[#0a0f1a] to-slate-950 text-foreground">
+      {/* Demo Mode Banner */}
+      {isDemoMode && (
+        <div className="bg-amber-500/20 border-b-2 border-amber-500/30 px-6 py-4">
+          <div className="max-w-[1800px] mx-auto">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3 text-amber-400">
+                <div className="p-2 rounded-lg bg-amber-500/20 border border-amber-500/30">
+                  <Eye className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="font-bold text-lg font-mono">DEMO MODE ACTIVE</span>
+                  <p className="text-xs text-amber-400/70 font-mono">You're viewing a preview of the moderation panel</p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/acc-manage/general'}
+                className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+              >
+                Login as Admin
+              </Button>
+            </div>
+            <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700/50">
+              <p className="text-xs text-slate-400 font-mono">
+                <strong className="text-amber-400">⚠️ Notice:</strong> You are not logged in as an admin. 
+                This is a demonstration view with sample data. Any actions you take here (warn, ban, OP, etc.) 
+                will only affect the demo data and <strong>will NOT be saved</strong> to the cloud. 
+                To manage real users, please log in with an admin account.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Hadal Blacksite Header */}
       <div className="border-b-2 border-cyan-500/30 bg-gradient-to-r from-slate-950 via-cyan-950/20 to-slate-950">
         <div className="max-w-[1800px] mx-auto px-6 py-4">
@@ -643,19 +1052,35 @@ const ModerationPanel = () => {
                 )}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-cyan-400 font-mono tracking-wider">HADAL BLACKSITE</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-bold text-cyan-400 font-mono tracking-wider">HADAL BLACKSITE</h1>
+                  {isDemoMode && (
+                    <span className="px-2 py-0.5 rounded text-xs font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      DEMO
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-slate-500 font-mono">MODERATION CONTROL CENTER</p>
               </div>
             </div>
             
             <div className="flex items-center gap-3">
-              {/* Lockdown Status */}
+              {/* Broadcast Button */}
+              <Button 
+                onClick={() => setShowBroadcastDialog(true)}
+                variant="outline" 
+                className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 gap-2"
+              >
+                <Megaphone className="w-4 h-4" /> Broadcast
+              </Button>
+              
+              {/* Lock Site Status */}
               {lockdownActive ? (
                 <Button 
                   onClick={handleLiftLockdown}
                   className="bg-red-600 hover:bg-red-500 gap-2 animate-pulse"
                 >
-                  <Lock className="w-4 h-4" /> LOCKDOWN ACTIVE
+                  <Lock className="w-4 h-4" /> SITE LOCKED
                 </Button>
               ) : (
                 <Button 
@@ -663,11 +1088,11 @@ const ModerationPanel = () => {
                   variant="outline" 
                   className="border-red-500/30 text-red-400 hover:bg-red-500/10 gap-2"
                 >
-                  <AlertOctagon className="w-4 h-4" /> Initiate Lockdown
+                  <AlertOctagon className="w-4 h-4" /> Lock Site
                 </Button>
               )}
               
-              <Button variant="outline" onClick={fetchUsers} className="gap-2 border-slate-700">
+              <Button variant="outline" onClick={isDemoMode ? () => setUsers(DEMO_USERS) : fetchUsers} className="gap-2 border-slate-700">
                 <RefreshCw className="w-4 h-4" /> Refresh
               </Button>
               <Button variant="ghost" onClick={() => navigate("/")} className="text-slate-400">
@@ -924,9 +1349,9 @@ const ModerationPanel = () => {
                       <span className="text-green-400 font-mono text-sm">ARMED</span>
                     </div>
                     <div className="flex items-center justify-between p-3 rounded bg-slate-800/50">
-                      <span className="text-sm font-mono">Facility Lockdown</span>
+                      <span className="text-sm font-mono">Site Lock</span>
                       <span className={`font-mono text-sm ${lockdownActive ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
-                        {lockdownActive ? 'ENGAGED' : 'STANDBY'}
+                        {lockdownActive ? 'ACTIVE' : 'STANDBY'}
                       </span>
                     </div>
                   </div>
@@ -943,7 +1368,7 @@ const ModerationPanel = () => {
                       className="w-full justify-start gap-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30"
                       disabled={lockdownActive}
                     >
-                      <Lock className="w-4 h-4" /> Initiate Facility Lockdown
+                      <Lock className="w-4 h-4" /> Lock Site (Emergency)
                     </Button>
                     <Button 
                       onClick={fetchUsers}
@@ -952,10 +1377,10 @@ const ModerationPanel = () => {
                       <RefreshCw className="w-4 h-4" /> Refresh All Data
                     </Button>
                     <Button 
-                      onClick={() => toast.info("Broadcasting to all personnel...")}
-                      className="w-full justify-start gap-2 bg-slate-800 hover:bg-slate-700"
+                      onClick={() => setShowBroadcastDialog(true)}
+                      className="w-full justify-start gap-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 border border-cyan-500/30"
                     >
-                      <Radio className="w-4 h-4" /> Broadcast Alert
+                      <Megaphone className="w-4 h-4" /> Global Notification
                     </Button>
                     <Button 
                       onClick={() => {
@@ -998,7 +1423,12 @@ const ModerationPanel = () => {
           onClose={() => { setShowUserDetails(false); setSelectedUser(null); }}
           onWarn={() => setShowWarnDialog(true)}
           onBan={() => setShowBanDialog(true)}
-          onUnban={() => handleUnban(selectedUser.user_id)}
+          onUnban={() => isDemoMode ? handleDemoUnban(selectedUser.user_id) : handleUnban(selectedUser.user_id)}
+          onOp={() => setShowOpDialog(true)}
+          onDeop={handleDemoDeop}
+          onVip={() => setShowVipDialog(true)}
+          onRevokeVip={handleRevokeVip}
+          isDemo={isDemoMode}
         />
       )}
 
@@ -1023,14 +1453,16 @@ const ModerationPanel = () => {
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowWarnDialog(false)} className="border-slate-700">Cancel</Button>
-            <Button onClick={handleWarn} className="bg-amber-600 hover:bg-amber-500">Issue Warning</Button>
+            <Button onClick={isDemoMode ? handleDemoWarn : handleWarn} className="bg-amber-600 hover:bg-amber-500">
+              {isDemoMode && '[DEMO] '}Issue Warning
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Ban Dialog */}
       <Dialog open={showBanDialog} onOpenChange={setShowBanDialog}>
-        <DialogContent className="bg-slate-950 border-red-500/30">
+        <DialogContent className="bg-slate-950 border-red-500/30 max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-400 font-mono">
               <Ban className="w-5 h-5" />
@@ -1083,27 +1515,58 @@ const ModerationPanel = () => {
                 </p>
               </div>
             </label>
+
+            {/* Ban Preview */}
+            {banReason && (
+              <div>
+                <label className="text-sm font-mono mb-2 block text-slate-400 flex items-center gap-2">
+                  <Eye className="w-3 h-3" /> BAN MESSAGE PREVIEW
+                </label>
+                <div className="p-4 rounded-lg bg-red-950/50 border-2 border-red-500/50">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Ban className="w-8 h-8 text-red-500" />
+                    <div>
+                      <h4 className="font-bold text-red-400 font-mono">ACCESS DENIED</h4>
+                      <p className="text-xs text-red-400/70 font-mono">Your account has been suspended</p>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded bg-slate-950/50 border border-slate-800">
+                    <p className="text-sm text-slate-300 font-mono mb-2">
+                      <strong>Reason:</strong> {banReason}
+                    </p>
+                    <p className="text-xs text-slate-500 font-mono">
+                      <strong>Duration:</strong> {banDuration === 'perm' ? 'Permanent' : banDuration}
+                    </p>
+                  </div>
+                  {isFakeBan && (
+                    <p className="text-xs text-purple-400 mt-2 font-mono flex items-center gap-1">
+                      <PartyPopper className="w-3 h-3" /> User can click to reveal it's a prank!
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowBanDialog(false)} className="border-slate-700">Cancel</Button>
-            <Button onClick={handleBan} className="bg-red-600 hover:bg-red-500">
-              {isFakeBan ? 'Fake Ban' : 'Ban User'}
+            <Button onClick={isDemoMode ? handleDemoBan : handleBan} className="bg-red-600 hover:bg-red-500">
+              {isDemoMode && '[DEMO] '}{isFakeBan ? 'Fake Ban' : 'Ban User'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Lockdown Dialog */}
+      {/* Lock Site Dialog */}
       <Dialog open={showLockdownDialog} onOpenChange={setShowLockdownDialog}>
         <DialogContent className="bg-slate-950 border-red-500/50">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-400 font-mono">
               <AlertOctagon className="w-5 h-5 animate-pulse" />
-              INITIATE LOCKDOWN
+              LOCK SITE
             </DialogTitle>
             <DialogDescription className="font-mono text-slate-400">
-              This will restrict all non-essential operations.
+              Emergency site lock - restricts all access until lifted.
             </DialogDescription>
           </DialogHeader>
           
@@ -1115,7 +1578,7 @@ const ModerationPanel = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="all">All Zones (Facility-Wide)</SelectItem>
+                  <SelectItem value="all">Entire Site (Global Lock)</SelectItem>
                   <SelectItem value="main">Main Site Only</SelectItem>
                   <SelectItem value="docs">Documentation</SelectItem>
                   <SelectItem value="def-dev">DefDev Mode</SelectItem>
@@ -1125,15 +1588,157 @@ const ModerationPanel = () => {
             
             <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30">
               <p className="text-sm text-red-300 font-mono">
-                ⚠️ WARNING: Lockdown will broadcast emergency alerts to all connected personnel and restrict access to affected zones.
+                ⚠️ EMERGENCY LOCK: When active, users attempting to access the site will see a "Site Under Lock" message. 
+                Only admins can lift the lock. Use this for emergencies only.
               </p>
             </div>
+            
+            {isDemoMode && (
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <p className="text-xs text-amber-400 font-mono flex items-center gap-2">
+                  <Eye className="w-3 h-3" /> DEMO MODE: This won't actually lock the site
+                </p>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLockdownDialog(false)} className="border-slate-700">Cancel</Button>
             <Button onClick={handleLockdown} className="bg-red-600 hover:bg-red-500 gap-2">
-              <Lock className="w-4 h-4" /> CONFIRM LOCKDOWN
+              <Lock className="w-4 h-4" /> CONFIRM LOCK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* OP (Grant Admin) Dialog */}
+      <Dialog open={showOpDialog} onOpenChange={setShowOpDialog}>
+        <DialogContent className="bg-slate-950 border-purple-500/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-purple-400 font-mono">
+              <Crown className="w-5 h-5" />
+              GRANT ADMIN (OP)
+            </DialogTitle>
+            <DialogDescription className="font-mono text-slate-400">
+              This will give {selectedUser?.username} full admin privileges.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/30">
+            <p className="text-sm text-purple-300 font-mono">
+              👑 WARNING: This action grants full moderation access. Only grant admin to trusted users.
+            </p>
+          </div>
+
+          {isDemoMode && (
+            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <p className="text-xs text-amber-400 font-mono flex items-center gap-2">
+                <Eye className="w-3 h-3" /> DEMO MODE: This action won't affect the cloud
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowOpDialog(false)} className="border-slate-700">Cancel</Button>
+            <Button onClick={handleOp} className="bg-purple-600 hover:bg-purple-500 gap-2">
+              <Crown className="w-4 h-4" /> {isDemoMode && '[DEMO] '}Grant Admin
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Global Broadcast Dialog */}
+      <Dialog open={showBroadcastDialog} onOpenChange={setShowBroadcastDialog}>
+        <DialogContent className="bg-slate-950 border-cyan-500/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-cyan-400 font-mono">
+              <Megaphone className="w-5 h-5" />
+              GLOBAL NOTIFICATION
+            </DialogTitle>
+            <DialogDescription className="font-mono text-slate-400">
+              Send a message to all UrbanShade users
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-mono mb-2 block text-slate-400">MESSAGE</label>
+              <Textarea
+                value={broadcastMessage}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
+                placeholder="sup yall :D"
+                rows={4}
+                className="bg-slate-900 border-slate-700 font-mono"
+                maxLength={500}
+              />
+              <div className="text-xs text-slate-500 mt-1 text-right">
+                {broadcastMessage.length}/500
+              </div>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+              <p className="text-xs text-cyan-400 font-mono">
+                📢 This message will appear as a notification to all online users
+              </p>
+            </div>
+
+            {isDemoMode && (
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <p className="text-xs text-amber-400 font-mono flex items-center gap-2">
+                  <Eye className="w-3 h-3" /> DEMO MODE: This action won't actually broadcast
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBroadcastDialog(false)} className="border-slate-700">Cancel</Button>
+            <Button onClick={handleBroadcast} className="bg-cyan-600 hover:bg-cyan-500 gap-2">
+              <Send className="w-4 h-4" /> {isDemoMode && '[DEMO] '}Broadcast
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* VIP Grant Dialog */}
+      <Dialog open={showVipDialog} onOpenChange={setShowVipDialog}>
+        <DialogContent className="bg-slate-950 border-purple-500/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-purple-400 font-mono">
+              <Star className="w-5 h-5" />
+              GRANT VIP STATUS
+            </DialogTitle>
+            <DialogDescription className="font-mono text-slate-400">
+              Grant VIP privileges to {selectedUser?.username}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30">
+              <h4 className="font-bold text-purple-400 mb-2 flex items-center gap-2">
+                <Sparkles className="w-4 h-4" /> VIP Benefits
+              </h4>
+              <ul className="text-sm text-slate-300 space-y-1 font-mono">
+                <li>• Cloud priority processing</li>
+                <li>• VIP badge next to name</li>
+                <li>• Skip advanced check when messaging Aswd</li>
+                <li>• Overall priority in queues</li>
+              </ul>
+            </div>
+
+            {isDemoMode && (
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <p className="text-xs text-amber-400 font-mono flex items-center gap-2">
+                  <Eye className="w-3 h-3" /> DEMO MODE: This action won't affect the cloud
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowVipDialog(false)} className="border-slate-700">Cancel</Button>
+            <Button onClick={handleVip} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 gap-2">
+              <Star className="w-4 h-4" /> {isDemoMode && '[DEMO] '}Grant VIP
             </Button>
           </DialogFooter>
         </DialogContent>
