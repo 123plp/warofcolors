@@ -1,98 +1,119 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Crown, Eye, Users, Gavel, Settings } from 'lucide-react';
+import { ArrowLeft, Shield, Crown, Eye, Gavel, BarChart3, Lock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const ModerationOverview = () => {
   const sections = [
     {
-      icon: Shield,
+      icon: Eye,
       title: 'NAVI Monitor',
-      description: 'Real-time user monitoring and activity tracking system.',
+      description: 'Real-time monitoring of NAVI bot activity, message filtering, and lockout events.',
       link: '/docs/moderation/navi',
+      color: 'text-cyan-400',
+      bgColor: 'bg-cyan-500/10',
     },
     {
       icon: Gavel,
       title: 'Moderation Actions',
-      description: 'Bans, warnings, and other enforcement tools.',
+      description: 'Warnings, bans, VIP grants, and other enforcement tools available to staff.',
       link: '/docs/moderation/actions',
+      color: 'text-red-400',
+      bgColor: 'bg-red-500/10',
     },
     {
-      icon: Eye,
+      icon: BarChart3,
       title: 'Statistics Dashboard',
-      description: 'Platform analytics and user activity metrics.',
+      description: 'User growth, moderation metrics, role distribution, and activity analytics.',
       link: '/docs/moderation/stats',
+      color: 'text-blue-400',
+      bgColor: 'bg-blue-500/10',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <Link to="/docs">
-          <Button variant="ghost" className="mb-6">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-foreground">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-bold text-red-400">Moderation Overview</h1>
+          <Link 
+            to="/docs" 
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/20 border border-primary/30 text-primary hover:bg-primary/30 transition-colors text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
             Back to Docs
-          </Button>
-        </Link>
-
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Moderation Overview</h1>
-          <p className="text-muted-foreground text-lg">
-            Tools and systems for platform moderation and administration.
-          </p>
+          </Link>
         </div>
+      </header>
 
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">About Moderation</h2>
-          <p className="text-muted-foreground mb-4">
-            The moderation system provides administrators and moderators with the tools they need 
-            to maintain a safe and healthy community. Access is restricted based on user roles.
+      <main className="max-w-4xl mx-auto px-6 py-12 space-y-12">
+        <section className="text-center space-y-4">
+          <Shield className="w-16 h-16 mx-auto text-red-400" />
+          <h2 className="text-4xl font-bold">Moderation Panel</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            The moderation panel is where admins manage users, handle reports, and keep UrbanShade OS running smoothly.
           </p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">
+            <Lock className="w-4 h-4" />
+            Admin Access Required
+          </div>
         </section>
 
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Role Hierarchy</h2>
+        <Alert className="border-amber-500/50 bg-amber-500/10">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertTitle className="text-amber-400">Demo Mode Available</AlertTitle>
+          <AlertDescription>
+            Non-admins can view the moderation panel at <code className="px-2 py-0.5 rounded bg-black/50">/moderation</code> in 
+            demo mode. All actions are simulated and don't affect real users - great for learning the interface!
+          </AlertDescription>
+        </Alert>
+
+        <section className="space-y-6">
+          <h3 className="text-2xl font-bold">Role Hierarchy</h3>
           <div className="space-y-4">
             <Card className="bg-yellow-500/5 border-yellow-500/20">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Crown className="w-5 h-5 text-yellow-500" />
-                  Administrator
+                  <span className="text-yellow-400">Creator (Aswd)</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Full access to all moderation tools, user management, system settings, and the moderation panel.
+                  Full control over everything. Can grant/revoke admin status, VIP status, and access all 
+                  owner-only features like lockdowns and de-ops. The only one who can make someone an admin.
                 </CardDescription>
               </CardContent>
             </Card>
-            <Card className="bg-blue-500/5 border-blue-500/20">
+            <Card className="bg-red-500/5 border-red-500/20">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-blue-500" />
-                  Moderator
+                  <Shield className="w-5 h-5 text-red-500" />
+                  <span className="text-red-400">Administrator</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Access to user warnings, temporary bans, and content moderation. Cannot access system settings.
+                  Full access to the moderation panel, user management, bans, warnings, and most system controls. 
+                  Cannot grant admin status to others or access owner-only features.
                 </CardDescription>
               </CardContent>
             </Card>
           </div>
         </section>
 
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold mb-6">Moderation Tools</h2>
+        <section className="space-y-6">
+          <h3 className="text-2xl font-bold">Panel Sections</h3>
           <div className="grid gap-4 md:grid-cols-3">
             {sections.map((section) => (
               <Link to={section.link} key={section.title}>
-                <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
+                <Card className={`h-full hover:bg-white/5 transition-colors cursor-pointer border-white/10 ${section.bgColor}`}>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
-                      <section.icon className="w-5 h-5 text-primary" />
-                      {section.title}
+                      <section.icon className={`w-5 h-5 ${section.color}`} />
+                      <span className={section.color}>{section.title}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -104,15 +125,29 @@ const ModerationOverview = () => {
           </div>
         </section>
 
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Accessing the Moderation Panel</h2>
-          <p className="text-muted-foreground">
-            The moderation panel can be accessed by administrators and moderators at{' '}
-            <code className="bg-muted px-2 py-1 rounded">/moderation</code>. 
-            You must be logged in with an account that has the appropriate role to access this area.
-          </p>
+        <section className="space-y-6">
+          <h3 className="text-2xl font-bold">Accessing the Panel</h3>
+          <div className="p-6 rounded-lg bg-black/40 border border-white/10 space-y-4">
+            <p className="text-muted-foreground">
+              The moderation panel is available at <code className="px-2 py-1 rounded bg-slate-800 text-primary">/moderation</code>.
+            </p>
+            <ol className="space-y-2 text-sm text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-primary">1.</span>
+                Make sure you're logged into an admin account
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-primary">2.</span>
+                Navigate to /moderation or use the admin link in your profile
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-primary">3.</span>
+                If you see a "Demo Mode" banner, you don't have admin access
+              </li>
+            </ol>
+          </div>
         </section>
-      </div>
+      </main>
     </div>
   );
 };
