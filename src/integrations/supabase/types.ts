@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      friends: {
+        Row: {
+          created_at: string | null
+          friend_id: string
+          id: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          friend_id: string
+          id?: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          friend_id?: string
+          id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_rate_limits: {
         Row: {
           blocked_until: string | null
@@ -40,6 +67,8 @@ export type Database = {
           body: string
           created_at: string | null
           id: string
+          message_type: string | null
+          metadata: Json | null
           priority: string | null
           read_at: string | null
           recipient_id: string
@@ -50,6 +79,8 @@ export type Database = {
           body: string
           created_at?: string | null
           id?: string
+          message_type?: string | null
+          metadata?: Json | null
           priority?: string | null
           read_at?: string | null
           recipient_id: string
@@ -60,6 +91,8 @@ export type Database = {
           body?: string
           created_at?: string | null
           id?: string
+          message_type?: string | null
+          metadata?: Json | null
           priority?: string | null
           read_at?: string | null
           recipient_id?: string
@@ -104,6 +137,30 @@ export type Database = {
           reason?: string | null
           target_ip?: unknown
           target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      monitoring_events: {
+        Row: {
+          created_at: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

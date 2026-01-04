@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Mail, Star, Trash2, AlertTriangle, Send, X, Users, RefreshCw, Cloud, LogIn, Loader2, Clock, Crown, Shield, Sparkles, Bot } from "lucide-react";
+import { Mail, Star, Trash2, AlertTriangle, Send, X, Users, RefreshCw, Cloud, LogIn, Loader2, Clock, Crown, Shield, Sparkles, Bot, UserPlus, UserCheck, Heart, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useMessages, Message } from "@/hooks/useMessages";
+import { useFriends } from "@/hooks/useFriends";
 import { useOnlineAccount } from "@/hooks/useOnlineAccount";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -70,9 +72,20 @@ export const Messages = () => {
     markAsRead, 
     deleteMessage 
   } = useMessages();
+  
+  const {
+    friends,
+    pendingRequests,
+    isLoading: friendsLoading,
+    sendFriendRequest,
+    acceptFriendRequest,
+    declineFriendRequest,
+    isFriend
+  } = useFriends();
 
   const [selected, setSelected] = useState<Message | null>(null);
   const [composing, setComposing] = useState(false);
+  const [leftTab, setLeftTab] = useState<"inbox" | "friends" | "users">("inbox");
   const [compose, setCompose] = useState({ 
     to: "", 
     toUserId: "",
@@ -80,9 +93,7 @@ export const Messages = () => {
     body: "", 
     priority: "normal" as Message["priority"] 
   });
-  const [showUserPicker, setShowUserPicker] = useState(false);
   const [showRateLimitDialog, setShowRateLimitDialog] = useState(false);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showAswdPopup, setShowAswdPopup] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [starredLocal, setStarredLocal] = useState<Set<string>>(new Set());
@@ -105,10 +116,6 @@ export const Messages = () => {
   const isLoggedIn = isOnlineMode && user && supabase;
 
   const handleRefresh = () => {
-    if (!isLoggedIn) {
-      setShowLoginPrompt(true);
-      return;
-    }
     fetchMessages();
     fetchUsers();
     toast.success("Messages refreshed");
@@ -134,6 +141,7 @@ export const Messages = () => {
 
   const handleSelectMessage = async (msg: Message) => {
     setSelected(msg);
+    setComposing(false);
     if (!msg.read_at) {
       await markAsRead(msg.id);
     }
@@ -154,7 +162,8 @@ export const Messages = () => {
 
   const selectRecipient = (userId: string, username: string) => {
     setCompose(prev => ({ ...prev, to: username, toUserId: userId }));
-    setShowUserPicker(false);
+    setComposing(true);
+    setSelected(null);
     
     // Show popup when selecting Aswd
     if (username.toLowerCase() === 'aswd') {
@@ -188,6 +197,33 @@ export const Messages = () => {
     }
   };
 
+  const handleFriendRequest = async (userId: string) => {
+    const result = await sendFriendRequest(userId);
+    if (result.success) {
+      toast.success("Friend request sent!");
+    } else {
+      toast.error(result.error || "Failed to send friend request");
+    }
+  };
+
+  const handleAcceptFriend = async (friendshipId: string) => {
+    const result = await acceptFriendRequest(friendshipId);
+    if (result.success) {
+      toast.success("Friend request accepted!");
+    } else {
+      toast.error(result.error || "Failed to accept friend request");
+    }
+  };
+
+  const handleDeclineFriend = async (friendshipId: string) => {
+    const result = await declineFriendRequest(friendshipId);
+    if (result.success) {
+      toast.info("Friend request declined");
+    } else {
+      toast.error(result.error || "Failed to decline friend request");
+    }
+  };
+
   const unreadCount = messages.filter(m => !m.read_at).length;
 
   const formatTime = (dateStr: string) => {
@@ -213,6 +249,20 @@ export const Messages = () => {
     if (mins <= 0) return "shortly";
     if (mins < 60) return `${mins} minute${mins > 1 ? 's' : ''}`;
     return `${Math.ceil(mins / 60)} hour${Math.ceil(mins / 60) > 1 ? 's' : ''}`;
+  };
+
+  // Check if message is a NAVI broadcast
+  const isNaviBroadcast = (msg: Message) => {
+    return (msg as any).message_type === 'navi_broadcast';
+  };
+
+  // Get friend user data
+  const getFriendUser = (friend: any) => {
+    const currentUserId = user?.id;
+    if (friend.user_id === currentUserId) {
+      return friend.friend_profile;
+    }
+    return friend.user_profile;
   };
 
   // Not logged in view
@@ -300,13 +350,13 @@ export const Messages = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Message List */}
-      <div className="w-80 border-r border-border flex flex-col">
-        <div className="p-4 border-b border-border bg-card/50">
+      {/* Left Panel - Inbox/Friends/Users */}
+      <div className="w-80 border-r border-border flex flex-col bg-card/30">
+        <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
-              <h2 className="font-bold">Inbox</h2>
+              <h2 className="font-bold">Messages</h2>
             </div>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
@@ -317,7 +367,7 @@ export const Messages = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={handleRefresh}
                 disabled={isLoading}
               >
@@ -326,17 +376,15 @@ export const Messages = () => {
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => { setComposing(true); setSelected(null); }} 
-              className="flex-1" 
-              size="sm"
-              disabled={isRateLimited}
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Compose
-            </Button>
-          </div>
+          <Button 
+            onClick={() => { setComposing(true); setSelected(null); }} 
+            className="w-full" 
+            size="sm"
+            disabled={isRateLimited}
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Compose
+          </Button>
           
           {pendingCount > 0 && (
             <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
@@ -346,65 +394,221 @@ export const Messages = () => {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground text-sm">
-              <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              No messages yet
-            </div>
-          ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                onClick={() => handleSelectMessage(msg)}
-                className={`p-3 border-b border-border cursor-pointer transition-colors ${
-                  selected?.id === msg.id ? "bg-primary/20" : "hover:bg-muted/50"
-                } ${!msg.read_at ? "bg-primary/5" : ""}`}
-              >
-                <div className="flex items-start justify-between mb-1">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {msg.priority !== "normal" && (
-                      <AlertTriangle className={`w-3 h-3 flex-shrink-0 ${getPriorityColor(msg.priority)}`} />
-                    )}
-                    <span className={`font-medium text-sm truncate ${!msg.read_at ? "text-primary font-bold" : ""}`}>
-                      {msg.sender_profile?.display_name || msg.sender_profile?.username || "Unknown"}
-                    </span>
-                    <UserBadge 
-                      username={msg.sender_profile?.username || ''} 
-                      role={msg.sender_profile?.role} 
-                    />
+        {/* Tabs */}
+        <Tabs value={leftTab} onValueChange={(v) => setLeftTab(v as any)} className="flex-1 flex flex-col">
+          <TabsList className="grid grid-cols-3 mx-2 mt-2">
+            <TabsTrigger value="inbox" className="text-xs gap-1">
+              <Inbox className="w-3 h-3" />
+              Inbox
+            </TabsTrigger>
+            <TabsTrigger value="friends" className="text-xs gap-1">
+              <Heart className="w-3 h-3" />
+              Friends
+              {pendingRequests.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px]">
+                  {pendingRequests.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="users" className="text-xs gap-1">
+              <Users className="w-3 h-3" />
+              All
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Inbox Tab */}
+          <TabsContent value="inbox" className="flex-1 overflow-y-auto m-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground text-sm">
+                <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                No messages yet
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  onClick={() => handleSelectMessage(msg)}
+                  className={`p-3 border-b border-border cursor-pointer transition-colors ${
+                    selected?.id === msg.id ? "bg-primary/20" : "hover:bg-muted/50"
+                  } ${!msg.read_at ? "bg-primary/5" : ""} ${isNaviBroadcast(msg) ? "bg-cyan-500/5 border-l-2 border-l-cyan-500" : ""}`}
+                >
+                  <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {isNaviBroadcast(msg) && <Bot className="w-3 h-3 text-cyan-400 flex-shrink-0" />}
+                      {msg.priority !== "normal" && !isNaviBroadcast(msg) && (
+                        <AlertTriangle className={`w-3 h-3 flex-shrink-0 ${getPriorityColor(msg.priority)}`} />
+                      )}
+                      <span className={`font-medium text-sm truncate ${!msg.read_at ? "text-primary font-bold" : ""}`}>
+                        {isNaviBroadcast(msg) ? "NAVI System" : (msg.sender_profile?.display_name || msg.sender_profile?.username || "Unknown")}
+                      </span>
+                      {!isNaviBroadcast(msg) && (
+                        <UserBadge 
+                          username={msg.sender_profile?.username || ''} 
+                          role={msg.sender_profile?.role} 
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleStar(msg.id);
+                        }}
+                        className="hover:scale-110 transition-transform p-1"
+                      >
+                        <Star
+                          className={`w-3 h-3 ${
+                            starredLocal.has(msg.id) ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+                      <span className="text-xs text-muted-foreground">{formatTime(msg.created_at)}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
+                  <div className={`text-sm mb-1 truncate ${!msg.read_at ? "font-semibold" : ""}`}>
+                    {msg.subject}
+                  </div>
+                  <div className="text-xs text-muted-foreground line-clamp-1">
+                    {msg.body.substring(0, 60)}...
+                  </div>
+                </div>
+              ))
+            )}
+          </TabsContent>
+
+          {/* Friends Tab */}
+          <TabsContent value="friends" className="flex-1 overflow-y-auto m-0">
+            {/* Pending Friend Requests */}
+            {pendingRequests.length > 0 && (
+              <div className="p-2 border-b border-border">
+                <div className="text-xs font-bold text-muted-foreground mb-2 px-2">PENDING REQUESTS</div>
+                {pendingRequests.map(req => {
+                  const requestUser = req.user_profile;
+                  return (
+                    <div key={req.id} className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="w-4 h-4 text-amber-400" />
+                          <span className="font-medium text-sm">
+                            {requestUser?.display_name || requestUser?.username || 'Unknown'}
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button 
+                            size="sm" 
+                            className="h-6 text-xs bg-green-600 hover:bg-green-500"
+                            onClick={() => handleAcceptFriend(req.id)}
+                          >
+                            Accept
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-6 text-xs"
+                            onClick={() => handleDeclineFriend(req.id)}
+                          >
+                            Decline
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Friends List */}
+            {friendsLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : friends.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground text-sm">
+                <Heart className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No friends yet</p>
+                <p className="text-xs mt-1">Message someone to add them as a friend!</p>
+              </div>
+            ) : (
+              <div className="p-1">
+                <div className="text-xs font-bold text-muted-foreground mb-2 px-2">YOUR FRIENDS</div>
+                {friends.map(friend => {
+                  const friendUser = getFriendUser(friend);
+                  return (
+                    <div
+                      key={friend.id}
+                      onClick={() => friendUser && selectRecipient(friendUser.user_id, friendUser.display_name || friendUser.username)}
+                      className="p-2 hover:bg-muted/50 rounded cursor-pointer flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                        <UserCheck className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {friendUser?.display_name || friendUser?.username || 'Unknown'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">@{friendUser?.username}</div>
+                      </div>
+                      <Send className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* All Users Tab */}
+          <TabsContent value="users" className="flex-1 overflow-y-auto m-0 p-1">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : users.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground text-sm">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No other users found</p>
+              </div>
+            ) : (
+              users.map(u => (
+                <div
+                  key={u.user_id}
+                  className="p-2 hover:bg-muted/50 rounded cursor-pointer flex items-center gap-3"
+                >
+                  <div 
+                    className="flex-1 flex items-center gap-3"
+                    onClick={() => selectRecipient(u.user_id, u.display_name || u.username)}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
+                      {(u.username || '?')[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate flex items-center gap-1">
+                        {u.display_name || u.username}
+                      </div>
+                      <div className="text-xs text-muted-foreground">@{u.username}</div>
+                    </div>
+                  </div>
+                  {!isFriend(u.user_id) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleStar(msg.id);
+                        handleFriendRequest(u.user_id);
                       }}
-                      className="hover:scale-110 transition-transform p-1"
                     >
-                      <Star
-                        className={`w-3 h-3 ${
-                          starredLocal.has(msg.id) ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"
-                        }`}
-                      />
-                    </button>
-                    <span className="text-xs text-muted-foreground">{formatTime(msg.created_at)}</span>
-                  </div>
+                      <UserPlus className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
-                <div className={`text-sm mb-1 truncate ${!msg.read_at ? "font-semibold" : ""}`}>
-                  {msg.subject}
-                </div>
-                <div className="text-xs text-muted-foreground line-clamp-1">
-                  {msg.body.substring(0, 60)}...
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Message Content / Compose */}
@@ -440,19 +644,13 @@ export const Messages = () => {
                           }
                         }
                       }}
-                      placeholder="Type username or select..."
+                      placeholder="Type username or select from friends..."
                       className="flex-1"
                     />
-                    <Button onClick={() => setShowUserPicker(!showUserPicker)} variant="outline">
-                      <Users className="w-4 h-4" />
-                    </Button>
                   </div>
                   
                   {/* User suggestions when typing */}
-                  {compose.to && !compose.toUserId && users.filter(u => 
-                    u.username.toLowerCase().includes(compose.to.toLowerCase()) ||
-                    u.display_name?.toLowerCase().includes(compose.to.toLowerCase())
-                  ).length > 0 && (
+                  {compose.to && !compose.toUserId && (
                     <div className="mt-2 p-2 rounded-lg border border-border bg-card max-h-32 overflow-y-auto">
                       <p className="text-xs text-muted-foreground mb-2 px-2">Suggestions:</p>
                       {users.filter(u => 
@@ -471,33 +669,28 @@ export const Messages = () => {
                     </div>
                   )}
                   
-                  {showUserPicker && (
-                    <div className="mt-2 p-2 rounded-lg border border-border bg-card max-h-48 overflow-y-auto">
-                      {isLoading ? (
-                        <div className="p-2 text-sm text-muted-foreground flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Loading users...
-                        </div>
-                      ) : users.length === 0 ? (
-                        <div className="p-3 text-center">
-                          <Users className="w-6 h-6 mx-auto mb-2 text-muted-foreground/50" />
-                          <p className="text-sm text-muted-foreground">No other users found yet</p>
-                          <p className="text-xs text-muted-foreground/70 mt-1">
-                            Be the first to invite friends!
-                          </p>
-                        </div>
-                      ) : (
-                        users.map(u => (
-                          <div
-                            key={u.user_id}
-                            onClick={() => selectRecipient(u.user_id, u.display_name || u.username)}
-                            className="p-2 hover:bg-muted rounded cursor-pointer text-sm"
-                          >
-                            <div className="font-medium">{u.display_name || u.username}</div>
-                            <div className="text-xs text-muted-foreground">@{u.username}</div>
-                          </div>
-                        ))
-                      )}
+                  {/* Quick friends selection */}
+                  {!compose.to && friends.length > 0 && (
+                    <div className="mt-2 p-2 rounded-lg border border-border bg-card">
+                      <p className="text-xs text-muted-foreground mb-2 px-2 flex items-center gap-1">
+                        <Heart className="w-3 h-3" /> Quick select from friends:
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {friends.slice(0, 5).map(friend => {
+                          const friendUser = getFriendUser(friend);
+                          return (
+                            <Button
+                              key={friend.id}
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => friendUser && selectRecipient(friendUser.user_id, friendUser.display_name || friendUser.username)}
+                            >
+                              {friendUser?.display_name || friendUser?.username}
+                            </Button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -566,7 +759,8 @@ export const Messages = () => {
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    {selected.priority !== "normal" && (
+                    {isNaviBroadcast(selected) && <Bot className="w-5 h-5 text-cyan-400" />}
+                    {selected.priority !== "normal" && !isNaviBroadcast(selected) && (
                       <AlertTriangle className={`w-4 h-4 ${getPriorityColor(selected.priority)}`} />
                     )}
                     <h3 className="font-bold text-lg">{selected.subject}</h3>
@@ -574,12 +768,14 @@ export const Messages = () => {
                   <div className="text-sm text-muted-foreground flex items-center flex-wrap gap-1">
                     <span>From:</span>
                     <span className="text-foreground font-medium">
-                      {selected.sender_profile?.display_name || selected.sender_profile?.username || "Unknown"}
+                      {isNaviBroadcast(selected) ? "NAVI System" : (selected.sender_profile?.display_name || selected.sender_profile?.username || "Unknown")}
                     </span>
-                    <UserBadge 
-                      username={selected.sender_profile?.username || ''} 
-                      role={selected.sender_profile?.role} 
-                    />
+                    {!isNaviBroadcast(selected) && (
+                      <UserBadge 
+                        username={selected.sender_profile?.username || ''} 
+                        role={selected.sender_profile?.role} 
+                      />
+                    )}
                     <span>• {formatTime(selected.created_at)}</span>
                   </div>
                 </div>
@@ -601,8 +797,18 @@ export const Messages = () => {
             </div>
 
             <div className="flex-1 p-6 overflow-y-auto">
+              {/* NAVI Broadcast Banner */}
+              {isNaviBroadcast(selected) && (
+                <div className="mb-4 px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs text-cyan-400 font-medium">
+                    System Broadcast • Sent by NAVI to all users
+                  </span>
+                </div>
+              )}
+              
               {/* Admin/Creator/VIP Verification Banner */}
-              {selected.sender_profile?.username?.toLowerCase() === 'aswd' && (
+              {!isNaviBroadcast(selected) && selected.sender_profile?.username?.toLowerCase() === 'aswd' && (
                 <div className="mb-4 px-3 py-2 rounded-lg bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/40 flex items-center gap-2">
                   <Crown className="w-4 h-4 text-yellow-400" />
                   <span className="text-xs text-yellow-400 font-medium">
@@ -611,7 +817,7 @@ export const Messages = () => {
                 </div>
               )}
               
-              {selected.sender_profile?.role === 'admin' && selected.sender_profile?.username?.toLowerCase() !== 'aswd' && (
+              {!isNaviBroadcast(selected) && selected.sender_profile?.role === 'admin' && selected.sender_profile?.username?.toLowerCase() !== 'aswd' && (
                 <div className="mb-4 px-3 py-2 rounded-lg bg-green-500/15 border border-green-500/30 flex items-center gap-2">
                   <Shield className="w-4 h-4 text-green-400" />
                   <span className="text-xs text-green-400 font-medium">
@@ -620,7 +826,7 @@ export const Messages = () => {
                 </div>
               )}
               
-              {selected.sender_profile?.is_vip && selected.sender_profile?.role !== 'admin' && selected.sender_profile?.username?.toLowerCase() !== 'aswd' && (
+              {!isNaviBroadcast(selected) && selected.sender_profile?.is_vip && selected.sender_profile?.role !== 'admin' && selected.sender_profile?.username?.toLowerCase() !== 'aswd' && (
                 <div className="mb-4 px-3 py-2 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-purple-400" />
                   <span className="text-xs text-purple-400 font-medium">
@@ -632,6 +838,21 @@ export const Messages = () => {
               <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed">
                 {selected.body}
               </pre>
+              
+              {/* Add friend button if not already friends */}
+              {!isNaviBroadcast(selected) && selected.sender_id && !isFriend(selected.sender_id) && (
+                <div className="mt-6 pt-4 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => handleFriendRequest(selected.sender_id)}
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Add {selected.sender_profile?.display_name || selected.sender_profile?.username} as Friend
+                  </Button>
+                </div>
+              )}
             </div>
           </>
         ) : (

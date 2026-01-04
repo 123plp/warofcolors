@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface BanInfo {
   isBanned: boolean;
   isFakeBan: boolean;
+  isTempBan: boolean;
   reason: string | null;
   expiresAt: Date | null;
   actionType: string | null;
@@ -13,6 +14,7 @@ export const useBanCheck = () => {
   const [banInfo, setBanInfo] = useState<BanInfo>({
     isBanned: false,
     isFakeBan: false,
+    isTempBan: false,
     reason: null,
     expiresAt: null,
     actionType: null,
@@ -21,12 +23,13 @@ export const useBanCheck = () => {
   const [isVip, setIsVip] = useState(false);
   const [vipReason, setVipReason] = useState<string | null>(null);
   const [showVipWelcome, setShowVipWelcome] = useState(false);
+  const [tempBanDismissed, setTempBanDismissed] = useState(false);
 
   const checkBanStatus = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setBanInfo({ isBanned: false, isFakeBan: false, reason: null, expiresAt: null, actionType: null });
+        setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
         setIsVip(false);
         setIsLoading(false);
         return;
@@ -61,7 +64,7 @@ export const useBanCheck = () => {
         .select('*')
         .eq('target_user_id', user.id)
         .eq('is_active', true)
-        .in('action_type', ['ban', 'temp_ban'])
+        .in('action_type', ['ban', 'temp_ban', 'perm_ban'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -76,18 +79,20 @@ export const useBanCheck = () => {
         // Check if ban has expired
         if (banData.expires_at && new Date(banData.expires_at) < new Date()) {
           // Ban has expired - don't block
-          setBanInfo({ isBanned: false, isFakeBan: false, reason: null, expiresAt: null, actionType: null });
+          setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
         } else {
+          const isTempBan = banData.action_type === 'temp_ban' || (banData.expires_at !== null);
           setBanInfo({
             isBanned: true,
             isFakeBan: banData.is_fake || false,
+            isTempBan,
             reason: banData.reason,
             expiresAt: banData.expires_at ? new Date(banData.expires_at) : null,
             actionType: banData.action_type,
           });
         }
       } else {
-        setBanInfo({ isBanned: false, isFakeBan: false, reason: null, expiresAt: null, actionType: null });
+        setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
       }
     } catch (error) {
       console.error('Error in ban check:', error);
@@ -104,6 +109,10 @@ export const useBanCheck = () => {
     setShowVipWelcome(false);
   }, []);
 
+  const dismissTempBan = useCallback(() => {
+    setTempBanDismissed(true);
+  }, []);
+
   useEffect(() => {
     checkBanStatus();
 
@@ -114,10 +123,12 @@ export const useBanCheck = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         checkBanStatus();
+        setTempBanDismissed(false); // Reset temp ban dismiss on new login
       } else if (event === 'SIGNED_OUT') {
-        setBanInfo({ isBanned: false, isFakeBan: false, reason: null, expiresAt: null, actionType: null });
+        setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
         setIsVip(false);
         setShowVipWelcome(false);
+        setTempBanDismissed(false);
       }
     });
 
@@ -133,7 +144,9 @@ export const useBanCheck = () => {
     isVip,
     vipReason,
     showVipWelcome,
+    tempBanDismissed,
     dismissVipWelcome,
+    dismissTempBan,
     refreshBanStatus: checkBanStatus,
   };
 };

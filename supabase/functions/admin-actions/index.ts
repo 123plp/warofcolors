@@ -5,6 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Fixed NAVI system user ID for system messages
+const NAVI_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -91,7 +94,7 @@ Deno.serve(async (req) => {
           const userRole = roles?.find(r => r.user_id === p.user_id);
           const isVip = vips?.some(v => v.user_id === p.user_id);
           const activeBan = userActions.find(a => 
-            (a.action_type === 'temp_ban' || a.action_type === 'perm_ban') && 
+            (a.action_type === 'temp_ban' || a.action_type === 'perm_ban' || a.action_type === 'ban') && 
             (!a.expires_at || new Date(a.expires_at) > new Date())
           );
           const warnings = userActions.filter(a => a.action_type === 'warn');
@@ -169,6 +172,23 @@ Deno.serve(async (req) => {
         });
       }
 
+      if (action === 'monitoring_events') {
+        // Get recent monitoring events
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const { data: events, error } = await supabaseAdmin
+          .from('monitoring_events')
+          .select('*')
+          .gte('created_at', fiveMinAgo)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+
+        return new Response(JSON.stringify({ events }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       return new Response(JSON.stringify({ error: 'Invalid GET action' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -211,6 +231,37 @@ Deno.serve(async (req) => {
         });
       }
 
+      if (action === 'remove_warning') {
+        const { warningId, reason } = body;
+        
+        // Mark warning as inactive
+        const { error: updateError } = await supabaseAdmin
+          .from('moderation_actions')
+          .update({ is_active: false })
+          .eq('id', warningId);
+
+        if (updateError) throw updateError;
+
+        // Log the removal as a new action
+        const { data, error } = await supabaseAdmin
+          .from('moderation_actions')
+          .insert({
+            action_type: 'warning_removed',
+            reason,
+            created_by: user.id,
+            is_active: true
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        console.log(`Admin ${user.id} removed warning ${warningId}: ${reason}`);
+
+        return new Response(JSON.stringify({ success: true, action: data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       if (action === 'ban') {
         const { targetUserId, reason, duration, isPermanent, isFake } = body;
         
@@ -246,16 +297,30 @@ Deno.serve(async (req) => {
       }
 
       if (action === 'unban') {
-        const { targetUserId } = body;
+        const { targetUserId, reason } = body;
         
         const { error } = await supabaseAdmin
           .from('moderation_actions')
           .update({ is_active: false })
           .eq('target_user_id', targetUserId)
-          .in('action_type', ['temp_ban', 'perm_ban']);
+          .in('action_type', ['temp_ban', 'perm_ban', 'ban']);
 
         if (error) throw error;
-        console.log(`Admin ${user.id} unbanned user ${targetUserId}`);
+
+        // Log the unban with reason
+        if (reason) {
+          await supabaseAdmin
+            .from('moderation_actions')
+            .insert({
+              target_user_id: targetUserId,
+              action_type: 'unban',
+              reason,
+              created_by: user.id,
+              is_active: true
+            });
+        }
+
+        console.log(`Admin ${user.id} unbanned user ${targetUserId}: ${reason || 'No reason'}`);
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -411,13 +476,14 @@ Deno.serve(async (req) => {
       }
 
       // =============================================
-      // NAVI MESSAGE ACTIONS
+      // NAVI MESSAGE ACTIONS - NOW DELIVERS TO INBOX
       // =============================================
       
       if (action === 'navi_message') {
         const { message, priority, target } = body;
         
-        const { data, error } = await supabaseAdmin
+        // Store in navi_messages table
+        const { data: naviMsg, error: naviError } = await supabaseAdmin
           .from('navi_messages')
           .insert({
             message,
@@ -428,10 +494,58 @@ Deno.serve(async (req) => {
           .select()
           .single();
 
-        if (error) throw error;
+        if (naviError) throw naviError;
+
+        // Now deliver to users' inboxes based on target audience
+        let targetUserIds: string[] = [];
+        
+        if (target === 'all' || !target) {
+          // Get all user IDs
+          const { data: allProfiles } = await supabaseAdmin
+            .from('profiles')
+            .select('user_id');
+          targetUserIds = allProfiles?.map(p => p.user_id) || [];
+        } else if (target === 'vips') {
+          // Get VIP user IDs
+          const { data: vips } = await supabaseAdmin
+            .from('vips')
+            .select('user_id');
+          targetUserIds = vips?.map(v => v.user_id) || [];
+        } else if (target === 'admins') {
+          // Get admin user IDs
+          const { data: admins } = await supabaseAdmin
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'admin');
+          targetUserIds = admins?.map(a => a.user_id) || [];
+        }
+
+        // Create inbox messages for all target users
+        if (targetUserIds.length > 0) {
+          const inboxMessages = targetUserIds.map(recipientId => ({
+            sender_id: user.id, // Admin who sent it
+            recipient_id: recipientId,
+            subject: `[NAVI ${priority?.toUpperCase() || 'INFO'}] System Announcement`,
+            body: message,
+            priority: priority === 'critical' ? 'urgent' : priority === 'warning' ? 'high' : 'normal',
+            message_type: 'navi_broadcast',
+            metadata: { navi_message_id: naviMsg.id, broadcast_target: target }
+          }));
+
+          const { error: inboxError } = await supabaseAdmin
+            .from('messages')
+            .insert(inboxMessages);
+
+          if (inboxError) {
+            console.error('Error delivering NAVI messages to inboxes:', inboxError);
+          } else {
+            console.log(`NAVI message delivered to ${targetUserIds.length} users`);
+          }
+        }
+
         console.log(`Admin ${user.id} sent NAVI message (${priority}/${target}): ${message.substring(0, 50)}...`);
 
-        return new Response(JSON.stringify({ success: true, naviMessage: data }), {
+        return new Response(JSON.stringify({ success: true, naviMessage: naviMsg, deliveredTo: targetUserIds.length }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
@@ -516,6 +630,91 @@ Deno.serve(async (req) => {
         console.log(`Admin ${user.id} sent broadcast: ${message.substring(0, 50)}...`);
 
         return new Response(JSON.stringify({ success: true, broadcast: data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // =============================================
+      // BULK ACTIONS
+      // =============================================
+      
+      if (action === 'bulk_warn') {
+        const { targetUserIds, reason } = body;
+        
+        const inserts = targetUserIds.map((targetUserId: string) => ({
+          target_user_id: targetUserId,
+          action_type: 'warn',
+          reason,
+          created_by: user.id,
+          is_active: true
+        }));
+
+        const { data, error } = await supabaseAdmin
+          .from('moderation_actions')
+          .insert(inserts)
+          .select();
+
+        if (error) throw error;
+        console.log(`Admin ${user.id} bulk warned ${targetUserIds.length} users: ${reason}`);
+
+        return new Response(JSON.stringify({ success: true, count: data.length }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (action === 'bulk_ban') {
+        const { targetUserIds, reason, duration, isPermanent } = body;
+        
+        let expiresAt = null;
+        if (!isPermanent && duration) {
+          const now = new Date();
+          if (duration === '1h') expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+          else if (duration === '24h') expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+          else if (duration === '7d') expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+          else if (duration === '30d') expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        }
+
+        const inserts = targetUserIds.map((targetUserId: string) => ({
+          target_user_id: targetUserId,
+          action_type: isPermanent ? 'perm_ban' : 'temp_ban',
+          reason,
+          expires_at: expiresAt?.toISOString() || null,
+          created_by: user.id,
+          is_active: true,
+          is_fake: false
+        }));
+
+        const { data, error } = await supabaseAdmin
+          .from('moderation_actions')
+          .insert(inserts)
+          .select();
+
+        if (error) throw error;
+        console.log(`Admin ${user.id} bulk banned ${targetUserIds.length} users: ${reason}`);
+
+        return new Response(JSON.stringify({ success: true, count: data.length }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (action === 'bulk_vip') {
+        const { targetUserIds, reason } = body;
+        
+        const inserts = targetUserIds.map((targetUserId: string) => ({
+          user_id: targetUserId,
+          granted_by: user.id,
+          reason
+        }));
+
+        const { data, error } = await supabaseAdmin
+          .from('vips')
+          .insert(inserts)
+          .select();
+
+        if (error) throw error;
+        console.log(`Admin ${user.id} bulk granted VIP to ${targetUserIds.length} users`);
+
+        return new Response(JSON.stringify({ success: true, count: data.length }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }

@@ -55,9 +55,10 @@ This file lists features that need backend/cloud implementation by the developer
 
 ### Features
 - ✅ `useBanCheck` hook checks for active bans on login
-- ✅ BannedScreen component blocks all access
-- ✅ Fake bans show "just kidding" after 5 seconds
-- ✅ Banned users cannot access ANY online features
+- ✅ BannedScreen component with NAVI-style design for perm bans
+- ✅ Temp bans show popup + persistent banner (can still use offline features)
+- ✅ Perm bans show full NAVI lockout screen
+- ✅ Fake bans show "just kidding" after 5 seconds with working dismiss
 - ✅ Ban check refreshes every 5 minutes
 
 ---
@@ -70,6 +71,22 @@ This file lists features that need backend/cloud implementation by the developer
 ### Frontend
 - ✅ Users can now see other users to message
 - ✅ VIP status properly fetched for message badges
+- ✅ Messages app revamped with Inbox/Friends/Users tabs
+- ✅ NAVI broadcasts appear in user inboxes
+
+---
+
+## ✅ Friends System - IMPLEMENTED
+
+### Database
+- ✅ `friends` table created with RLS policies
+- ✅ Realtime enabled for friends updates
+
+### Frontend
+- ✅ Send friend requests from Messages app
+- ✅ Accept/decline pending requests
+- ✅ Friends tab for quick messaging
+- ✅ Add friend button after reading message
 
 ---
 
@@ -77,3 +94,4 @@ This file lists features that need backend/cloud implementation by the developer
 
 - All cloud features are now fully wired up!
 - Leaked password protection should be enabled in Supabase dashboard (Auth > Security)
+- NAVI Monitoring tab and Stats tab components created (need to be added to ModerationPanel tabs)

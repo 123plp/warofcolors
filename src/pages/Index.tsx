@@ -23,6 +23,8 @@ import { DevModeConsole } from "@/components/DevModeConsole";
 import { LockScreen } from "@/components/LockScreen";
 import { BugcheckScreen, createBugcheck, BugcheckData } from "@/components/BugcheckScreen";
 import { BannedScreen } from "@/components/BannedScreen";
+import { TempBanPopup } from "@/components/TempBanPopup";
+import { TempBanBanner } from "@/components/TempBanBanner";
 import { VipWelcomeDialog } from "@/components/VipWelcomeDialog";
 import { actionDispatcher } from "@/lib/actionDispatcher";
 import { systemBus } from "@/lib/systemBus";
@@ -581,13 +583,25 @@ const Index = () => {
     );
   }
 
-  // Ban check - blocks ALL online features (shows after NAVI lockout check)
-  if (banCheck.isBanned && !banCheck.isLoading) {
+  // Ban check - permanent bans block ALL access, temp bans show popup + banner
+  if (banCheck.isBanned && !banCheck.isLoading && !banCheck.isTempBan && !banCheck.isFakeBan) {
+    // Permanent ban - full block
     return (
       <BannedScreen
         reason={banCheck.reason}
         expiresAt={banCheck.expiresAt}
-        isFakeBan={banCheck.isFakeBan}
+        isFakeBan={false}
+      />
+    );
+  }
+
+  // Fake ban - show scary screen then reveal
+  if (banCheck.isBanned && !banCheck.isLoading && banCheck.isFakeBan) {
+    return (
+      <BannedScreen
+        reason={banCheck.reason}
+        expiresAt={banCheck.expiresAt}
+        isFakeBan={true}
         onFakeBanDismiss={banCheck.refreshBanStatus}
       />
     );
@@ -703,6 +717,11 @@ const Index = () => {
 
   return (
     <>
+      {/* Temp ban banner at top of screen */}
+      {banCheck.isBanned && banCheck.isTempBan && banCheck.tempBanDismissed && (
+        <TempBanBanner expiresAt={banCheck.expiresAt} />
+      )}
+      
       <Desktop 
         onLogout={handleLogout} 
         onReboot={handleReboot}
@@ -731,6 +750,14 @@ const Index = () => {
         open={banCheck.showVipWelcome}
         onClose={banCheck.dismissVipWelcome}
         reason={banCheck.vipReason}
+      />
+      
+      {/* Temp ban popup (shown once, then banner persists) */}
+      <TempBanPopup
+        open={banCheck.isBanned && banCheck.isTempBan && !banCheck.tempBanDismissed}
+        onDismiss={banCheck.dismissTempBan}
+        reason={banCheck.reason}
+        expiresAt={banCheck.expiresAt}
       />
     </>
   );
