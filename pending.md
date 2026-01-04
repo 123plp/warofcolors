@@ -94,4 +94,4 @@ This file lists features that need backend/cloud implementation by the developer
 
 - All cloud features are now fully wired up!
 - Leaked password protection should be enabled in Supabase dashboard (Auth > Security)
-- NAVI Monitoring tab and Stats tab components created (need to be added to ModerationPanel tabs)
+- ✅ NAVI Monitoring tab and Stats tab wired into ModerationPanel tabs

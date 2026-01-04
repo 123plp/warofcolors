@@ -7,8 +7,10 @@ import {
   Settings, Database, Wifi, Globe, Server, ChevronDown, ChevronRight,
   TriangleAlert, ShieldAlert, ShieldCheck, Filter, Download, Trash2,
   MessageSquare, Bell, Volume2, VolumeX, Cpu, HardDrive, Crown, Megaphone,
-  UserCog, Send, Star, Sparkles, Bot
+  UserCog, Send, Star, Sparkles, Bot, BarChart3
 } from "lucide-react";
+import { NaviMonitoringTab } from "@/components/moderation/NaviMonitoringTab";
+import { StatsTab } from "@/components/moderation/StatsTab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1226,7 +1228,7 @@ const ModerationPanel = () => {
         {/* Main Content */}
         <div className="flex-1">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="bg-slate-900/50 border border-slate-800 p-1 mb-6">
+            <TabsList className="bg-slate-900/50 border border-slate-800 p-1 mb-6 flex-wrap">
               <TabsTrigger value="users" className="gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
                 <Users className="w-4 h-4" /> Personnel ({users.length})
               </TabsTrigger>
@@ -1238,6 +1240,12 @@ const ModerationPanel = () => {
               </TabsTrigger>
               <TabsTrigger value="security" className="gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
                 <ShieldCheck className="w-4 h-4" /> Security
+              </TabsTrigger>
+              <TabsTrigger value="navi" className="gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+                <Bot className="w-4 h-4" /> NAVI Monitor
+              </TabsTrigger>
+              <TabsTrigger value="stats" className="gap-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400">
+                <BarChart3 className="w-4 h-4" /> Stats
               </TabsTrigger>
             </TabsList>
 
@@ -1518,6 +1526,14 @@ const ModerationPanel = () => {
                   </div>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="navi" className="m-0">
+              <NaviMonitoringTab />
+            </TabsContent>
+
+            <TabsContent value="stats" className="m-0">
+              <StatsTab users={users} />
             </TabsContent>
           </Tabs>
         </div>
