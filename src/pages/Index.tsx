@@ -4,6 +4,7 @@ import { Desktop } from "@/components/Desktop";
 import { UserSelectionScreen } from "@/components/UserSelectionScreen";
 import { BootScreen } from "@/components/BootScreen";
 import { BiosScreen } from "@/components/BiosScreen";
+import { PostScreen } from "@/components/PostScreen";
 import { ShutdownScreen } from "@/components/ShutdownScreen";
 import { RebootScreen } from "@/components/RebootScreen";
 import { CrashScreen, CrashType, CrashData, triggerCrash } from "@/components/CrashScreen";
@@ -41,6 +42,15 @@ const Index = () => {
   const [adminSetupComplete, setAdminSetupComplete] = useState(false);
   const [showingBiosTransition, setShowingBiosTransition] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [postComplete, setPostComplete] = useState(() => {
+    // Skip POST if fast boot OR if this is a warm reboot
+    const warmReboot = sessionStorage.getItem("urbanshade_warm_reboot");
+    if (warmReboot === "true") {
+      sessionStorage.removeItem("urbanshade_warm_reboot");
+      return true;
+    }
+    return false;
+  });
   const [biosComplete, setBiosComplete] = useState(() => {
     // Check if we should reboot to BIOS
     const rebootToBios = localStorage.getItem("urbanshade_reboot_to_bios");
@@ -402,9 +412,12 @@ const Index = () => {
     setRebooting(false);
     setLoggedIn(false);
     setBlackScreen(true);
+    // Set warm reboot flag to skip POST
+    sessionStorage.setItem("urbanshade_warm_reboot", "true");
     // Black screen for 3 seconds
     setTimeout(() => {
       setBlackScreen(false);
+      setPostComplete(true); // Skip POST on warm reboot
       setBooted(false);
     }, 3000);
   };
@@ -413,9 +426,19 @@ const Index = () => {
     setShowingBiosTransition(true);
     setTimeout(() => {
       setBiosComplete(false);
+      setPostComplete(true); // Skip POST when entering BIOS
       setBooted(false);
       setShowingBiosTransition(false);
     }, 1500);
+  };
+  
+  const handlePostComplete = () => {
+    setPostComplete(true);
+  };
+  
+  const handlePostEnterBios = () => {
+    setPostComplete(true);
+    setBiosComplete(false);
   };
 
   const handleInstallationComplete = (adminData: { username: string; password: string }) => {
@@ -464,9 +487,10 @@ const Index = () => {
 
   const handleShutdownComplete = () => {
     setShuttingDown(false);
-    // Wait 3 seconds before showing nothing
+    // Cold boot - reset POST state too
     setTimeout(() => {
       setBooted(false);
+      setPostComplete(false); // Show POST on next boot (cold start)
     }, 3000);
   };
 
@@ -525,6 +549,7 @@ const Index = () => {
       setCrashed(false);
       setLoggedIn(false);
       setBooted(false);
+      setPostComplete(false); // Show POST on cold reboot after crash
       setKilledProcess("");
       setCrashType("kernel");
       setCustomCrashData(null);
@@ -658,6 +683,14 @@ const Index = () => {
       setCrashType("kernel");
       setCustomCrashData(null);
     }} />;
+  }
+
+  // POST Screen (Power-On Self Test) - shows before BIOS/Boot
+  if (!postComplete) {
+    return <PostScreen 
+      onComplete={handlePostComplete} 
+      onEnterBios={handlePostEnterBios}
+    />;
   }
 
   if (!biosComplete) {

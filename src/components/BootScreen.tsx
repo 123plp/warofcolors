@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { isOfflineMode } from "@/integrations/supabase/client";
+import { getBiosSettings } from "@/hooks/useBiosSettings";
 
 interface BootScreenProps {
   onComplete: () => void;
@@ -14,59 +15,93 @@ export const BootScreen = ({ onComplete, onSafeMode }: BootScreenProps) => {
   const [flickerOpacity, setFlickerOpacity] = useState(1);
   const terminalRef = useRef<HTMLDivElement>(null);
 
-  // Build boot sequence dynamically based on Supabase status
+  // Get BIOS settings
+  const biosSettings = getBiosSettings();
+  const isFastBoot = biosSettings.fastBoot;
+  const bootTimeout = biosSettings.bootTimeout;
+  const showBootLogo = biosSettings.bootLogo;
+  const bootOrder = biosSettings.bootOrder;
+
+  // Initialize countdown from BIOS timeout setting
+  useEffect(() => {
+    setSafeModeCountdown(bootTimeout);
+  }, [bootTimeout]);
+
+  // Build boot sequence dynamically based on Supabase status and BIOS settings
   const getBootSequence = () => {
-    const sequence: { text: string; type: "command" | "output" | "success" | "warn" | "error" | "system"; delay: number }[] = [
-      // Port calls - 1 fail, 2 good
-      { text: "> call port 21", type: "command", delay: 200 },
-      { text: "Port 21 connection failed. [FAIL]", type: "error", delay: 150 },
-      { text: "> call port 80", type: "command", delay: 200 },
-      { text: "Port 80 [OK] - HTTP ready", type: "success", delay: 100 },
-      { text: "> call port 443", type: "command", delay: 200 },
-      { text: "Port 443 [OK] - HTTPS ready", type: "success", delay: 100 },
-      { text: "", type: "output", delay: 50 },
-      
-      // Init drives
-      { text: "> init drives", type: "command", delay: 250 },
-      { text: "Mounting drive C:\\ [OK]", type: "success", delay: 100 },
-      { text: "Mounting drive D:\\ [OK]", type: "success", delay: 100 },
-      { text: "", type: "output", delay: 50 },
-      
-      // Init systems
-      { text: "> init systems", type: "command", delay: 250 },
-      { text: "Loading core modules... [OK]", type: "success", delay: 120 },
-      { text: "Loading display drivers... [OK]", type: "success", delay: 100 },
-      { text: "Loading network stack... [OK]", type: "success", delay: 100 },
-      { text: "", type: "output", delay: 50 },
-      
-      // Call backup drive
-      { text: "> call backup_drive", type: "command", delay: 200 },
-      { text: "Backup drive connected [OK]", type: "success", delay: 100 },
-      { text: "", type: "output", delay: 50 },
-      
-      // Call supabase - depends on actual status
-      { text: "> call supabase", type: "command", delay: 300 },
-    ];
+    const baseDelay = isFastBoot ? 0.4 : 1; // Speed multiplier for fast boot
+    
+    const sequence: { text: string; type: "command" | "output" | "success" | "warn" | "error" | "system"; delay: number }[] = [];
+
+    // Show boot device from boot order
+    const primaryDevice = bootOrder[0] || 'hdd';
+    const deviceNames: Record<string, string> = {
+      hdd: 'URBANSHADE-SSD-01',
+      usb: 'USB Storage Device',
+      network: 'PXE Network Boot',
+    };
+    
+    sequence.push({ text: `> boot ${deviceNames[primaryDevice] || primaryDevice}`, type: "command", delay: Math.round(200 * baseDelay) });
+    sequence.push({ text: `Booting from ${deviceNames[primaryDevice]}...`, type: "output", delay: Math.round(150 * baseDelay) });
+    sequence.push({ text: "", type: "output", delay: Math.round(50 * baseDelay) });
+
+    // Port calls - 1 fail, 2 good
+    sequence.push({ text: "> call port 21", type: "command", delay: Math.round(200 * baseDelay) });
+    sequence.push({ text: "Port 21 connection failed. [FAIL]", type: "error", delay: Math.round(150 * baseDelay) });
+    sequence.push({ text: "> call port 80", type: "command", delay: Math.round(200 * baseDelay) });
+    sequence.push({ text: "Port 80 [OK] - HTTP ready", type: "success", delay: Math.round(100 * baseDelay) });
+    sequence.push({ text: "> call port 443", type: "command", delay: Math.round(200 * baseDelay) });
+    sequence.push({ text: "Port 443 [OK] - HTTPS ready", type: "success", delay: Math.round(100 * baseDelay) });
+    sequence.push({ text: "", type: "output", delay: Math.round(50 * baseDelay) });
+    
+    // Init drives
+    sequence.push({ text: "> init drives", type: "command", delay: Math.round(250 * baseDelay) });
+    sequence.push({ text: "Mounting drive C:\\ [OK]", type: "success", delay: Math.round(100 * baseDelay) });
+    sequence.push({ text: "Mounting drive D:\\ [OK]", type: "success", delay: Math.round(100 * baseDelay) });
+    sequence.push({ text: "", type: "output", delay: Math.round(50 * baseDelay) });
+    
+    // Init systems
+    sequence.push({ text: "> init systems", type: "command", delay: Math.round(250 * baseDelay) });
+    sequence.push({ text: "Loading core modules... [OK]", type: "success", delay: Math.round(120 * baseDelay) });
+    sequence.push({ text: "Loading display drivers... [OK]", type: "success", delay: Math.round(100 * baseDelay) });
+    sequence.push({ text: "Loading network stack... [OK]", type: "success", delay: Math.round(100 * baseDelay) });
+    
+    // Fast boot skips some checks
+    if (!isFastBoot) {
+      sequence.push({ text: "Running memory diagnostics... [OK]", type: "success", delay: Math.round(150 * baseDelay) });
+      sequence.push({ text: "Verifying system integrity... [OK]", type: "success", delay: Math.round(120 * baseDelay) });
+    }
+    
+    sequence.push({ text: "", type: "output", delay: Math.round(50 * baseDelay) });
+    
+    // Call backup drive
+    sequence.push({ text: "> call backup_drive", type: "command", delay: Math.round(200 * baseDelay) });
+    sequence.push({ text: "Backup drive connected [OK]", type: "success", delay: Math.round(100 * baseDelay) });
+    sequence.push({ text: "", type: "output", delay: Math.round(50 * baseDelay) });
+    
+    // Call supabase - depends on actual status
+    sequence.push({ text: "> call supabase", type: "command", delay: Math.round(300 * baseDelay) });
 
     if (isOfflineMode) {
-      sequence.push({ text: "Connecting to Supabase backend... [FAIL]", type: "error", delay: 200 });
-      sequence.push({ text: "WARNING: Running in offline mode", type: "warn", delay: 150 });
+      sequence.push({ text: "Connecting to Supabase backend... [FAIL]", type: "error", delay: Math.round(200 * baseDelay) });
+      sequence.push({ text: "WARNING: Running in offline mode", type: "warn", delay: Math.round(150 * baseDelay) });
     } else {
-      sequence.push({ text: "Connecting to Supabase backend... [OK]", type: "success", delay: 150 });
+      sequence.push({ text: "Connecting to Supabase backend... [OK]", type: "success", delay: Math.round(150 * baseDelay) });
     }
 
-    sequence.push({ text: "", type: "output", delay: 50 });
+    sequence.push({ text: "", type: "output", delay: Math.round(50 * baseDelay) });
 
-    // 10x repeat "Complete. Calling system.sys..."
-    for (let i = 0; i < 10; i++) {
-      sequence.push({ text: "Complete. Calling system.sys...", type: "output", delay: 80 });
+    // Repeat "Complete. Calling system.sys..." - fewer times in fast boot
+    const repeatCount = isFastBoot ? 3 : 10;
+    for (let i = 0; i < repeatCount; i++) {
+      sequence.push({ text: "Complete. Calling system.sys...", type: "output", delay: Math.round(80 * baseDelay) });
     }
 
-    sequence.push({ text: "", type: "output", delay: 50 });
+    sequence.push({ text: "", type: "output", delay: Math.round(50 * baseDelay) });
 
     // Goto login
-    sequence.push({ text: "> goto login", type: "command", delay: 200 });
-    sequence.push({ text: "Launching desktop environment...", type: "system", delay: 300 });
+    sequence.push({ text: "> goto login", type: "command", delay: Math.round(200 * baseDelay) });
+    sequence.push({ text: "Launching desktop environment...", type: "system", delay: Math.round(300 * baseDelay) });
 
     return sequence;
   };
@@ -93,7 +128,7 @@ export const BootScreen = ({ onComplete, onSafeMode }: BootScreenProps) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Safe mode countdown
+  // Safe mode countdown - uses BIOS timeout setting
   useEffect(() => {
     if (!showSafeModePrompt) return;
     
@@ -143,12 +178,12 @@ export const BootScreen = ({ onComplete, onSafeMode }: BootScreenProps) => {
       } else {
         setTimeout(() => {
           onComplete();
-        }, 400);
+        }, isFastBoot ? 200 : 400);
       }
     };
 
     showNextLine();
-  }, [onComplete, showSafeModePrompt]);
+  }, [onComplete, showSafeModePrompt, isFastBoot]);
 
   const getLineColor = (type: string) => {
     switch (type) {
@@ -183,14 +218,22 @@ export const BootScreen = ({ onComplete, onSafeMode }: BootScreenProps) => {
         </div>
 
         <div className="text-center space-y-4 z-10">
-          <div className="text-[#00bfff] text-2xl font-bold animate-pulse tracking-widest">
-            URBANSHADE OS
-          </div>
+          {showBootLogo && (
+            <div className="text-[#00bfff] text-2xl font-bold animate-pulse tracking-widest">
+              URBANSHADE OS
+            </div>
+          )}
+          {!showBootLogo && (
+            <div className="text-[#00bfff] text-lg">
+              Starting Urbanshade OS...
+            </div>
+          )}
           <div className="text-[#00bfff]/80 text-sm">
             Press <kbd className="px-3 py-1 bg-[#00bfff]/20 rounded text-[#00bfff] font-bold border border-[#00bfff]/40">F8</kbd> for Safe Mode
           </div>
           <div className="text-[#00bfff]/50 text-xs">
             Booting normally in {safeModeCountdown}...
+            {isFastBoot && <span className="ml-2 text-green-400/70">(Fast Boot)</span>}
           </div>
         </div>
       </div>
@@ -267,7 +310,10 @@ export const BootScreen = ({ onComplete, onSafeMode }: BootScreenProps) => {
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#00bfff]/20 bg-black/80 z-20">
         <div className="flex items-center justify-between text-[10px] text-[#00bfff]/60">
           <span>URBANSHADE HADAL BLACKSITE</span>
-          <span>DEPTH: 8,247m | HULL: 98.7%</span>
+          <span>
+            {isFastBoot && <span className="text-green-400/70 mr-4">FAST BOOT</span>}
+            DEPTH: 8,247m | HULL: 98.7%
+          </span>
           <span className="font-mono">{new Date().toISOString()}</span>
         </div>
       </div>
