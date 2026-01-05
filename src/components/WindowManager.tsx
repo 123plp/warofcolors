@@ -48,6 +48,7 @@ import { AccountSettings } from "./apps/AccountSettings";
 import { ImageEditor } from "./apps/ImageEditor";
 import { ComputerManagement } from "./apps/ComputerManagement";
 import { UURApp } from "./apps/UURApp";
+import { GameHub } from "./apps/GameHub";
 
 interface WindowData {
   id: string;
@@ -188,7 +189,7 @@ export const WindowManager = ({ windows, onClose, onFocus, onMinimize, allWindow
       case "audio-editor":
         return <GenericApp title="Sound Editor" description="Record and edit audio files" features={["Multi-track recording", "Audio effects", "Noise reduction", "Format conversion"]} />;
       case "game-center":
-        return <GenericApp title="Game Hub" description="Collection of mini games" features={["Classic arcade games", "Puzzle challenges", "Score tracking", "Achievement system"]} />;
+        return <GameHub />;
       case "chat":
         return <InstantChat />;
       case "video-call":
