@@ -27,7 +27,15 @@ export const useBanCheck = () => {
 
   const checkBanStatus = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      // Handle auth errors gracefully (network issues, etc.)
+      if (authError) {
+        console.warn('Auth check failed (possibly offline):', authError.message);
+        setIsLoading(false);
+        return;
+      }
+      
       if (!user) {
         setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
         setIsVip(false);
@@ -35,67 +43,82 @@ export const useBanCheck = () => {
         return;
       }
 
-      // Check VIP status
-      const { data: vipData } = await (supabase as any).rpc('is_vip', { _user_id: user.id });
-      const userIsVip = vipData === true;
-      setIsVip(userIsVip);
+      // Check VIP status - wrap in try-catch for network resilience
+      try {
+        const { data: vipData } = await (supabase as any).rpc('is_vip', { _user_id: user.id });
+        const userIsVip = vipData === true;
+        setIsVip(userIsVip);
 
-      // If VIP, check if we should show welcome popup
-      if (userIsVip) {
-        const vipWelcomeShown = localStorage.getItem(`urbanshade_vip_welcome_${user.id}`);
-        if (!vipWelcomeShown) {
-          // Fetch VIP reason
-          const { data: vipRecord } = await (supabase as any)
-            .from('vips')
-            .select('reason')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          
-          if (vipRecord) {
-            setVipReason(vipRecord.reason);
-            setShowVipWelcome(true);
+        // If VIP, check if we should show welcome popup
+        if (userIsVip) {
+          const vipWelcomeShown = localStorage.getItem(`urbanshade_vip_welcome_${user.id}`);
+          if (!vipWelcomeShown) {
+            // Fetch VIP reason
+            const { data: vipRecord } = await (supabase as any)
+              .from('vips')
+              .select('reason')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            if (vipRecord) {
+              setVipReason(vipRecord.reason);
+              setShowVipWelcome(true);
+            }
           }
         }
+      } catch (vipError) {
+        console.warn('VIP check failed (possibly offline):', vipError);
+        // Continue without VIP info
       }
 
-      // Check for active bans
-      const { data: banData, error } = await (supabase as any)
-        .from('moderation_actions')
-        .select('*')
-        .eq('target_user_id', user.id)
-        .eq('is_active', true)
-        .in('action_type', ['ban', 'temp_ban', 'perm_ban'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Check for active bans - wrap in try-catch for network resilience
+      try {
+        const { data: banData, error } = await (supabase as any)
+          .from('moderation_actions')
+          .select('*')
+          .eq('target_user_id', user.id)
+          .eq('is_active', true)
+          .in('action_type', ['ban', 'temp_ban', 'perm_ban'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (error) {
-        console.error('Error checking ban status:', error);
-        setIsLoading(false);
-        return;
-      }
-
-      if (banData) {
-        // Check if ban has expired
-        if (banData.expires_at && new Date(banData.expires_at) < new Date()) {
-          // Ban has expired - don't block
-          setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
-        } else {
-          const isTempBan = banData.action_type === 'temp_ban' || (banData.expires_at !== null);
-          setBanInfo({
-            isBanned: true,
-            isFakeBan: banData.is_fake || false,
-            isTempBan,
-            reason: banData.reason,
-            expiresAt: banData.expires_at ? new Date(banData.expires_at) : null,
-            actionType: banData.action_type,
-          });
+        if (error) {
+          console.warn('Ban check query failed:', error.message);
+          setIsLoading(false);
+          return;
         }
-      } else {
+
+        if (banData) {
+          // Check if ban has expired
+          if (banData.expires_at && new Date(banData.expires_at) < new Date()) {
+            // Ban has expired - don't block
+            setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
+          } else {
+            const isTempBan = banData.action_type === 'temp_ban' || (banData.expires_at !== null);
+            setBanInfo({
+              isBanned: true,
+              isFakeBan: banData.is_fake || false,
+              isTempBan,
+              reason: banData.reason,
+              expiresAt: banData.expires_at ? new Date(banData.expires_at) : null,
+              actionType: banData.action_type,
+            });
+          }
+        } else {
+          setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
+        }
+      } catch (banError) {
+        console.warn('Ban check failed (possibly offline):', banError);
+        // Don't block user if we can't check - assume not banned
         setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
       }
+
     } catch (error) {
-      console.error('Error in ban check:', error);
+      // Handle any unexpected errors gracefully
+      console.warn('Unexpected error in ban check:', error);
+      // Don't block user on errors
+      setBanInfo({ isBanned: false, isFakeBan: false, isTempBan: false, reason: null, expiresAt: null, actionType: null });
     } finally {
       setIsLoading(false);
     }
