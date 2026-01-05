@@ -607,11 +607,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_creator: { Args: { _user_id: string }; Returns: boolean }
       is_vip: { Args: { _user_id: string }; Returns: boolean }
       record_navi_metrics: { Args: never; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "creator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -739,7 +740,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "creator"],
     },
   },
 } as const

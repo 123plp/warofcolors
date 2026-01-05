@@ -40,21 +40,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if user is admin
+    // Check if user is admin or creator
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .eq('role', 'admin')
+      .in('role', ['admin', 'creator'])
       .maybeSingle();
 
     if (!roleData) {
-      console.log(`Access denied for user ${user.id} - not an admin`);
-      return new Response(JSON.stringify({ error: 'Access denied - admin only' }), {
+      console.log(`Access denied for user ${user.id} - not an admin or creator`);
+      return new Response(JSON.stringify({ error: 'Access denied - admin or creator only' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    const isCreator = roleData.role === 'creator';
 
     console.log(`Admin ${user.id} accessing admin actions`);
 
