@@ -89,6 +89,7 @@ const AVAILABLE_APPS: StoreApp[] = [
   { id: "containment-game", name: "Containment Breach", category: "Games", description: "FNAF-style survival horror. Survive 5 nights monitoring memetic hazards.", version: "1.0.0", size: "12.4 MB", rating: 4.9, downloads: "15.7K", featured: true, new: true, permissions: ['Graphics', 'Audio'], lastUpdate: '2024-01-25' },
   { id: "encryption", name: "File Encryptor", category: "Security", description: "AES-256 encryption", version: "6.2.0", size: "4.8 MB", rating: 4.9, downloads: "27.4K", permissions: ['File Access', 'Encryption'], lastUpdate: '2024-01-02' },
   { id: "password-manager", name: "Password Vault", category: "Security", description: "Secure passwords", version: "7.1.3", size: "5.6 MB", rating: 4.7, downloads: "38.1K", featured: true, permissions: ['Encryption', 'System'], lastUpdate: '2024-01-17' },
+  { id: "containment-game", name: "Containment Breach", category: "Games", description: "Survive the night shift monitoring escaped anomalies. Use cameras, doors, and lures to prevent containment breaches until 6AM.", version: "1.0.0", size: "18.7 MB", rating: 4.9, downloads: "67.2K", featured: true, new: true, permissions: ['Graphics', 'Audio', 'Notifications'], lastUpdate: '2024-01-24' },
 ].map(app => ({ ...app, reviews: generateReviews(app.name) }));
 
 interface DownloadState {
