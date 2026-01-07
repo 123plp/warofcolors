@@ -13,6 +13,7 @@ import {
 import { NaviAuthoritiesTab } from "@/components/moderation/NaviAuthoritiesTab";
 import { NaviAutonomousPanel } from "@/components/moderation/NaviAutonomousPanel";
 import { StatsTab } from "@/components/moderation/StatsTab";
+import SupportTicketsTab from "@/components/moderation/SupportTicketsTab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1309,6 +1310,13 @@ const ModerationPanel = () => {
               color="blue"
             />
             <SidebarNavItem 
+              icon={MessageSquare} 
+              label="Support Tickets" 
+              active={activeTab === 'support'} 
+              onClick={() => setActiveTab('support')} 
+              color="purple"
+            />
+            <SidebarNavItem 
               icon={Bot} 
               label="NAVI Config" 
               active={activeTab === 'navi-config'} 
@@ -1547,6 +1555,11 @@ const ModerationPanel = () => {
           {/* Stats Tab */}
           {activeTab === 'stats' && (
             <StatsTab users={users} />
+          )}
+
+          {/* Support Tickets Tab */}
+          {activeTab === 'support' && (
+            <SupportTicketsTab isDemo={isDemoMode} />
           )}
 
           {/* NAVI Config Tab (formerly Autonomous) */}

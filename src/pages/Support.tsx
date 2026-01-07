@@ -54,46 +54,211 @@ interface ChatMessage {
 }
 
 const FAQ_LIBRARY: FAQItem[] = [
-  { question: "Can I change my username?", answer: "Yes! Go to Settings → Account → Change Username. You can change it once every 30 days.", keywords: ["username", "change", "name", "rename"] },
-  { question: "Can I collaborate with others on UrbanShade?", answer: "Currently, UrbanShade is a single-user experience. However, you can message other users through the Messages app if you have a cloud account.", keywords: ["collaborate", "multiplayer", "together", "share"] },
-  { question: "Can I customize the desktop?", answer: "Absolutely! Right-click on the desktop to access customization options, or go to Settings → Appearance to change themes, wallpapers, and more.", keywords: ["customize", "desktop", "theme", "wallpaper", "appearance"] },
-  { question: "Can I export my data?", answer: "Yes! Go to Account Manager → Data to export your settings, messages, and other data in JSON format.", keywords: ["export", "data", "download", "backup"] },
-  { question: "Can I install custom apps?", answer: "Yes! Use the UUR Manager to browse and install community-made packages. You can also submit your own packages.", keywords: ["install", "apps", "uur", "packages", "custom"] },
-  { question: "Can I use UrbanShade offline?", answer: "Yes, but with limited functionality. Local mode works offline, but cloud features (messaging, sync) require an internet connection.", keywords: ["offline", "internet", "connection", "local"] },
-  { question: "Do I need to create an account?", answer: "No! You can use UrbanShade in local mode without any account. Creating an account enables cloud sync and messaging features.", keywords: ["account", "register", "signup", "required"] },
-  { question: "Does UrbanShade collect my personal data?", answer: "We only collect data necessary for cloud features (email, username, settings). We never sell your data. See our Privacy Policy for details.", keywords: ["data", "privacy", "collect", "personal", "information"] },
-  { question: "Does UrbanShade cost anything?", answer: "No! UrbanShade is completely free. There are no premium tiers, hidden fees, or in-app purchases.", keywords: ["cost", "price", "free", "pay", "money", "premium"] },
-  { question: "Does UrbanShade work on mobile?", answer: "UrbanShade is designed for desktop browsers. While it may partially work on tablets, we recommend using a computer for the best experience.", keywords: ["mobile", "phone", "tablet", "touch", "responsive"] },
-  { question: "How do I become a moderator?", answer: "Moderators are selected by the admin team based on community contributions and trust. There's no application process - we'll reach out if we think you'd be a good fit.", keywords: ["moderator", "mod", "staff", "apply", "join team"] },
-  { question: "How do I change my password?", answer: "Go to Account Manager → Security → Change Password. You'll need to enter your current password to set a new one.", keywords: ["password", "change", "security", "credentials"] },
-  { question: "How do I contact support?", answer: "You can use the Contact Support option on this page, message an admin through the Messages app, or email emailbot00noreply@gmail.com for urgent issues.", keywords: ["support", "contact", "help", "admin", "email"] },
-  { question: "How do I delete my account?", answer: "Go to Account Manager → Danger Zone → Delete Account. This action is irreversible and will delete all your data.", keywords: ["delete", "account", "remove", "close", "terminate"] },
-  { question: "How do I enable dark mode?", answer: "UrbanShade uses a dark theme by default! You can adjust colors in Settings → Appearance.", keywords: ["dark mode", "theme", "light", "colors"] },
-  { question: "How do I get unbanned?", answer: "If you believe your ban was a mistake, contact an admin through email at emailbot00noreply@gmail.com. Include your username and explain the situation.", keywords: ["unban", "banned", "appeal", "suspended"] },
-  { question: "How do I report a bug?", answer: "Use the Messages app to contact an admin, or submit an issue on our GitHub repository. Include steps to reproduce the bug.", keywords: ["bug", "report", "issue", "problem", "glitch"] },
-  { question: "How do I report a user?", answer: "In the Messages app, open the conversation with the user you want to report and click the Report button. Admins will review your report.", keywords: ["report", "user", "abuse", "harassment", "block"] },
-  { question: "How do I reset my settings?", answer: "Go to Settings → Advanced → Reset Settings. You can choose to reset specific categories or all settings.", keywords: ["reset", "settings", "default", "restore"] },
-  { question: "How do I sign out?", answer: "Click on your profile in the Start Menu and select 'Sign out', or go to Settings → Account → Sign Out.", keywords: ["signout", "logout", "sign out", "log out"] },
-  { question: "How do I sync my data across devices?", answer: "Create a cloud account and enable sync in Settings → Online Account. Your settings will automatically sync every 2 minutes.", keywords: ["sync", "devices", "cloud", "backup", "cross-device"] },
-  { question: "How do I use keyboard shortcuts?", answer: "Press Ctrl+? to see all available keyboard shortcuts, or check the documentation at /docs/shortcuts.", keywords: ["keyboard", "shortcuts", "hotkeys", "keys"] },
-  { question: "How does the ban system work?", answer: "Minor violations result in warnings. Repeated issues lead to temporary bans (1h to 30 days). Serious violations result in permanent bans.", keywords: ["ban", "system", "rules", "moderation", "punishment"] },
-  { question: "How does the messaging rate limit work?", answer: "You can send 15 messages per 5 minutes. After hitting the limit, you'll need to wait before sending more. This prevents spam.", keywords: ["rate limit", "messages", "limit", "spam", "cooldown"] },
-  { question: "I forgot my password, how do I recover it?", answer: "Click 'Forgot Password' on the login screen and enter your email. We'll send you a reset link.", keywords: ["forgot", "password", "recover", "reset", "lost"] },
-  { question: "Is my data secure?", answer: "Yes! We use Supabase with Row Level Security (RLS) policies. Your data is encrypted and stored securely.", keywords: ["secure", "security", "safe", "encryption", "data"] },
-  { question: "Is the team trustworthy?", answer: "We're a small, passionate team based in the EU (Latvia). We follow GDPR and EU laws. Check our Team page to learn more about us.", keywords: ["team", "trustworthy", "trust", "safe", "legitimate", "who"] },
-  { question: "Is UrbanShade open source?", answer: "The project is hosted on GitHub and you can view the codebase. We welcome contributions and feedback!", keywords: ["open source", "github", "code", "contribute", "repository"] },
-  { question: "What are badges and how do I get them?", answer: "Badges are visual indicators of your role (Admin, Mod, VIP, Creator). They're assigned by the admin team based on contributions or special status.", keywords: ["badges", "roles", "vip", "admin", "special"] },
-  { question: "What browsers are supported?", answer: "We recommend Chrome, Firefox, or Edge (latest versions). Safari works but may have minor issues. Internet Explorer is not supported.", keywords: ["browser", "chrome", "firefox", "safari", "edge", "support"] },
-  { question: "What happens if I get banned?", answer: "You'll see a ban screen explaining why you were banned. Temporary bans show a countdown. Permanent bans cannot be appealed for serious violations.", keywords: ["banned", "ban", "suspended", "blocked"] },
-  { question: "What is DEF-DEV mode?", answer: "DEF-DEV is a developer/debugging mode with advanced tools for inspecting the system state, viewing logs, and testing features. Access it via /def-dev or the Terminal.", keywords: ["defdev", "def-dev", "developer", "debug", "tools"] },
-  { question: "What is local mode vs cloud mode?", answer: "Local mode stores everything in your browser (no account needed). Cloud mode syncs your data to our servers, enabling cross-device access and messaging.", keywords: ["local", "cloud", "mode", "difference", "storage"] },
-  { question: "What is NAVI?", answer: "NAVI is our AI security system that monitors for suspicious behavior and helps with automated moderation. It's named after a helpful AI companion.", keywords: ["navi", "ai", "security", "system", "bot"] },
-  { question: "What is the UUR Manager?", answer: "UUR (UrbanShade User Repository) is our package manager for installing community-made apps and tools.", keywords: ["uur", "manager", "packages", "repository", "apps"] },
-  { question: "What is UrbanShade OS?", answer: "UrbanShade OS is a browser-based operating system simulator. It's a fun project that recreates the desktop experience in your web browser.", keywords: ["what", "urbanshade", "about", "os", "simulator"] },
-  { question: "Where is my data stored?", answer: "Local mode stores data in your browser's localStorage. Cloud mode uses Supabase servers (secure, GDPR-compliant infrastructure).", keywords: ["data", "stored", "location", "server", "where"] },
-  { question: "Why am I seeing a maintenance screen?", answer: "We occasionally take the system offline for updates or maintenance. This usually lasts only a few minutes. Check our status page for updates.", keywords: ["maintenance", "down", "offline", "unavailable"] },
-  { question: "Why can't I send messages?", answer: "You might have hit the rate limit (15 messages per 5 minutes), or your account may be restricted. Check if you have any pending warnings.", keywords: ["messages", "send", "blocked", "cant", "unable"] },
-  { question: "Why did my session expire?", answer: "For security, sessions expire after extended inactivity. Simply sign in again to continue.", keywords: ["session", "expired", "logged out", "automatic"] },
+  { 
+    question: "Can I change my username?", 
+    answer: "Yes, you can change your username! Navigate to Settings → Account → Change Username. Note that username changes are limited to once every 30 days to prevent abuse. Your new username must be unique and follow our naming guidelines (3-20 characters, alphanumeric with underscores allowed).", 
+    keywords: ["username", "change", "name", "rename", "modify", "update"] 
+  },
+  { 
+    question: "Can I collaborate with others on UrbanShade?", 
+    answer: "UrbanShade is primarily a single-user desktop experience. However, with a cloud account you can:\n• Message other users through the Messages app\n• Share files via the file sharing system\n• View other users' public profiles\n\nTrue real-time collaboration (like shared documents) is on our roadmap for future updates!", 
+    keywords: ["collaborate", "multiplayer", "together", "share", "teamwork", "coop"] 
+  },
+  { 
+    question: "Can I customize the desktop?", 
+    answer: "Absolutely! UrbanShade offers extensive customization options:\n\n**Quick Access:** Right-click on the desktop for quick customization options\n\n**Full Customization:** Go to Settings → Appearance where you can:\n• Change themes (dark, light, custom)\n• Set custom wallpapers (local or URL)\n• Adjust icon sizes and grid spacing\n• Customize taskbar appearance\n• Modify window animations and effects\n• Create and save theme presets", 
+    keywords: ["customize", "desktop", "theme", "wallpaper", "appearance", "personalize", "style"] 
+  },
+  { 
+    question: "Can I export my data?", 
+    answer: "Yes, you have full control over your data! Go to Account Manager → Data to export your:\n• Settings and preferences\n• Messages and conversations\n• Files and documents\n• Custom themes\n\nData is exported in JSON format for easy portability. This is useful for backups or if you want to transfer your setup to another device.", 
+    keywords: ["export", "data", "download", "backup", "save", "transfer"] 
+  },
+  { 
+    question: "Can I install custom apps?", 
+    answer: "Yes! The UUR Manager (UrbanShade User Repository) allows you to:\n• Browse community-made packages and apps\n• Install with one click\n• Rate and review packages\n• Submit your own creations\n\nAccess it from the Start Menu → UUR Manager. All packages are community-moderated for safety.", 
+    keywords: ["install", "apps", "uur", "packages", "custom", "download", "add"] 
+  },
+  { 
+    question: "Can I use UrbanShade offline?", 
+    answer: "Yes, UrbanShade has full offline support with some limitations:\n\n**Works Offline:**\n• All local applications\n• File management\n• Settings and customization\n• Games and utilities\n\n**Requires Internet:**\n• Cloud sync\n• Messaging\n• UUR package downloads\n• Weather and external data\n\nYour data is saved locally and will sync when you reconnect.", 
+    keywords: ["offline", "internet", "connection", "local", "network"] 
+  },
+  { 
+    question: "Do I need to create an account?", 
+    answer: "No account is required! UrbanShade works in two modes:\n\n**Local Mode (No Account):**\n• Everything stored in your browser\n• Full access to local features\n• No data syncing\n\n**Cloud Mode (With Account):**\n• Cross-device synchronization\n• Messaging with other users\n• Cloud file storage\n• Profile and badges\n\nYou can start in local mode and create an account anytime!", 
+    keywords: ["account", "register", "signup", "required", "mandatory", "login"] 
+  },
+  { 
+    question: "Does UrbanShade collect my personal data?", 
+    answer: "We collect only what's necessary for cloud features:\n\n**What We Collect:**\n• Email (for authentication)\n• Username (for identification)\n• Settings (for cloud sync)\n• Messages (for chat functionality)\n\n**What We DON'T Collect:**\n• Browsing history\n• Personal files (unless you upload them)\n• Location data\n• Analytics tracking\n\nWe never sell your data. See our Privacy Policy at /privacy for full details.", 
+    keywords: ["data", "privacy", "collect", "personal", "information", "tracking"] 
+  },
+  { 
+    question: "Does UrbanShade cost anything?", 
+    answer: "UrbanShade is 100% FREE! There are:\n• No premium tiers\n• No hidden fees\n• No in-app purchases\n• No ads\n• No paywalled features\n\nThe project is maintained by passionate developers and supported by the community. Consider contributing to our GitHub if you want to help!", 
+    keywords: ["cost", "price", "free", "pay", "money", "premium", "subscription"] 
+  },
+  { 
+    question: "Does UrbanShade work on mobile?", 
+    answer: "UrbanShade is designed for desktop browsers and works best on:\n• Chrome (recommended)\n• Firefox\n• Edge\n\n**Mobile/Tablet:** While the site will load, the desktop simulation experience is optimized for keyboard and mouse. Some features may be difficult to use on touch devices. We recommend using a computer for the best experience.", 
+    keywords: ["mobile", "phone", "tablet", "touch", "responsive", "android", "ios"] 
+  },
+  { 
+    question: "How do I become a moderator?", 
+    answer: "Moderators are selected by the admin team based on:\n• Active community participation\n• Helpfulness to other users\n• Trustworthiness and maturity\n• Understanding of community guidelines\n\nThere's no formal application process - we'll reach out if we think you'd be a great fit! Focus on being a positive member of the community.", 
+    keywords: ["moderator", "mod", "staff", "apply", "join team", "volunteer"] 
+  },
+  { 
+    question: "How do I change my password?", 
+    answer: "To change your password:\n\n1. Go to Account Manager → Security\n2. Click \"Change Password\"\n3. Enter your current password\n4. Enter and confirm your new password\n5. Click Save\n\n**Password Requirements:**\n• Minimum 8 characters\n• Mix of letters and numbers recommended\n• Avoid using the same password as other sites", 
+    keywords: ["password", "change", "security", "credentials", "update"] 
+  },
+  { 
+    question: "How do I contact support?", 
+    answer: "You have several options to reach us:\n\n**1. NAVI Support (This chat!):**\nAsk questions here - I'll check our FAQ first, then connect you with a human if needed.\n\n**2. Direct Messaging:**\nMessage an admin through the Messages app in UrbanShade.\n\n**3. Email:**\nemailbot00noreply@gmail.com for urgent issues.\n\n**4. GitHub:**\nSubmit issues on our repository for bugs or feature requests.", 
+    keywords: ["support", "contact", "help", "admin", "email", "reach"] 
+  },
+  { 
+    question: "How do I delete my account?", 
+    answer: "⚠️ **Warning: This action is irreversible!**\n\nTo delete your account:\n1. Go to Account Manager → Danger Zone\n2. Click \"Delete Account\"\n3. Confirm by typing your username\n4. Click the final confirmation button\n\n**What Gets Deleted:**\n• All your cloud data\n• Messages and conversations\n• Profile and settings\n• All associated information\n\nConsider exporting your data first!", 
+    keywords: ["delete", "account", "remove", "close", "terminate", "erase"] 
+  },
+  { 
+    question: "How do I enable dark mode?", 
+    answer: "UrbanShade uses a dark theme by default - no need to enable it!\n\nIf you want to adjust colors:\n1. Go to Settings → Appearance\n2. Choose from preset themes or create custom ones\n3. Adjust individual colors to your preference\n\nYou can also use the Theme Editor for advanced customization.", 
+    keywords: ["dark mode", "theme", "light", "colors", "night"] 
+  },
+  { 
+    question: "How do I get unbanned?", 
+    answer: "If you believe your ban was a mistake or want to appeal:\n\n**1. Email Us:**\nContact emailbot00noreply@gmail.com with:\n• Your username\n• Approximate ban date\n• Explanation of the situation\n\n**2. Wait for Review:**\nAppeals are reviewed within 48-72 hours.\n\n**Note:** Permanent bans for serious violations (harassment, illegal content) typically cannot be appealed.", 
+    keywords: ["unban", "banned", "appeal", "suspended", "blocked"] 
+  },
+  { 
+    question: "How do I report a bug?", 
+    answer: "Found a bug? Here's how to report it:\n\n**Option 1 - Messages App:**\nSend details to an admin through in-app messaging.\n\n**Option 2 - GitHub:**\nSubmit an issue on our repository with:\n• Bug description\n• Steps to reproduce\n• Expected vs actual behavior\n• Browser and device info\n• Screenshots if applicable\n\n**Option 3 - Support Chat:**\nDescribe the issue here and we'll escalate it!", 
+    keywords: ["bug", "report", "issue", "problem", "glitch", "error", "broken"] 
+  },
+  { 
+    question: "How do I report a user?", 
+    answer: "To report inappropriate behavior:\n\n1. Open the Messages app\n2. Go to the conversation with the user\n3. Click the ⚙️ menu\n4. Select \"Report User\"\n5. Choose a reason and add details\n6. Submit\n\n**What Happens Next:**\n• Admins review all reports within 24 hours\n• Appropriate action is taken based on severity\n• You may be contacted for more information\n• Reporters remain anonymous", 
+    keywords: ["report", "user", "abuse", "harassment", "block", "inappropriate"] 
+  },
+  { 
+    question: "How do I reset my settings?", 
+    answer: "To reset your settings:\n\n1. Go to Settings → Advanced\n2. Click \"Reset Settings\"\n3. Choose what to reset:\n   • Appearance only\n   • Application settings\n   • All settings\n4. Confirm your choice\n\n**Note:** This affects local settings. Cloud-synced settings can be reset separately in Account Manager.", 
+    keywords: ["reset", "settings", "default", "restore", "original"] 
+  },
+  { 
+    question: "How do I sign out?", 
+    answer: "Several ways to sign out:\n\n**Method 1:** Click your profile picture in the Start Menu → \"Sign Out\"\n\n**Method 2:** Go to Settings → Account → Sign Out\n\n**Method 3:** Use the keyboard shortcut Ctrl+Shift+L\n\n**Note:** Signing out will end your session but your data remains saved locally and in the cloud.", 
+    keywords: ["signout", "logout", "sign out", "log out", "exit"] 
+  },
+  { 
+    question: "How do I sync my data across devices?", 
+    answer: "To enable cross-device sync:\n\n1. Create or sign into your cloud account\n2. Go to Settings → Online Account\n3. Enable \"Auto-sync\"\n4. Your data syncs automatically every 2 minutes\n\n**What Syncs:**\n• Settings and preferences\n• Desktop layout\n• Theme configurations\n• Custom shortcuts\n• Messages (always synced)\n\nYou can also manually sync by clicking \"Sync Now\" in settings.", 
+    keywords: ["sync", "devices", "cloud", "backup", "cross-device", "synchronize"] 
+  },
+  { 
+    question: "How do I use keyboard shortcuts?", 
+    answer: "UrbanShade has extensive keyboard shortcuts!\n\n**Quick Reference:**\n• Ctrl+? - Show all shortcuts\n• Win/Cmd - Open Start Menu\n• Alt+Tab - Switch windows\n• Ctrl+W - Close window\n• Ctrl+N - New file\n\n**Full List:** Check /docs/shortcuts for the complete documentation.\n\n**Custom Shortcuts:** You can create your own in Settings → Keyboard.", 
+    keywords: ["keyboard", "shortcuts", "hotkeys", "keys", "commands"] 
+  },
+  { 
+    question: "How does the ban system work?", 
+    answer: "Our ban system uses progressive discipline:\n\n**Warnings (0-2):** Verbal warnings for minor issues\n**Temporary Bans:**\n• 1st offense: 1 hour\n• 2nd offense: 24 hours\n• 3rd offense: 7 days\n• 4th offense: 30 days\n\n**Permanent Bans:** For serious violations including:\n• Harassment or threats\n• Illegal content\n• Repeated serious offenses\n• Attempting to exploit the system\n\nAll actions are logged and reviewed.", 
+    keywords: ["ban", "system", "rules", "moderation", "punishment", "discipline"] 
+  },
+  { 
+    question: "How does the messaging rate limit work?", 
+    answer: "To prevent spam, messaging has rate limits:\n\n**Limits:**\n• 15 messages per 5 minutes\n• 100 messages per hour\n• No limit on conversation count\n\n**When Limited:**\n• You'll see a cooldown timer\n• Wait for the timer to reset\n• Your messages queue and send after\n\n**Exceptions:** VIP users have higher limits. Rate limits don't apply to admin messages.", 
+    keywords: ["rate limit", "messages", "limit", "spam", "cooldown", "throttle"] 
+  },
+  { 
+    question: "I forgot my password, how do I recover it?", 
+    answer: "To recover your password:\n\n1. Go to the login screen\n2. Click \"Forgot Password\"\n3. Enter your email address\n4. Check your inbox (and spam folder!)\n5. Click the reset link (valid for 1 hour)\n6. Create a new password\n\n**Didn't get the email?** Wait 5 minutes and try again. Contact support if issues persist.", 
+    keywords: ["forgot", "password", "recover", "reset", "lost", "remember"] 
+  },
+  { 
+    question: "Is my data secure?", 
+    answer: "Yes! We take security seriously:\n\n**Technical Measures:**\n• Supabase with Row Level Security (RLS)\n• Encrypted data transmission (HTTPS)\n• Secure authentication tokens\n• Regular security audits\n\n**Access Control:**\n• Users can only access their own data\n• Admins have limited, logged access\n• No third-party data sharing\n\n**Compliance:**\n• GDPR compliant\n• EU data protection standards", 
+    keywords: ["secure", "security", "safe", "encryption", "data", "protected"] 
+  },
+  { 
+    question: "Is the team trustworthy?", 
+    answer: "We're a small, passionate team based in the EU (Latvia):\n\n**Transparency:**\n• Open-source codebase on GitHub\n• Public team page at /team\n• Clear privacy policy\n• GDPR and EU law compliant\n\n**Community Focus:**\n• No monetization or data selling\n• Community-driven development\n• Regular communication with users\n\nFeel free to reach out with any concerns!", 
+    keywords: ["team", "trustworthy", "trust", "safe", "legitimate", "who", "developers"] 
+  },
+  { 
+    question: "Is UrbanShade open source?", 
+    answer: "Yes! UrbanShade is open source:\n\n**What's Available:**\n• Full source code on GitHub\n• Documentation and guides\n• Contribution guidelines\n• Issue tracking\n\n**How to Contribute:**\n• Report bugs or suggest features\n• Submit pull requests\n• Help with documentation\n• Create UUR packages\n\nWe welcome all contributions from the community!", 
+    keywords: ["open source", "github", "code", "contribute", "repository", "free"] 
+  },
+  { 
+    question: "What are badges and how do I get them?", 
+    answer: "Badges are visual indicators showing your status:\n\n**Badge Types:**\n• 👑 Admin - System administrator\n• 🛡️ Moderator - Community moderator\n• ⭐ VIP - Special community member\n• 🎨 Creator - UUR package creator\n• 🐛 Bug Hunter - Found significant bugs\n• 💖 Supporter - Community contributor\n\n**How to Earn:**\nBadges are assigned by admins based on contributions, not purchased. Focus on being helpful and active!", 
+    keywords: ["badges", "roles", "vip", "admin", "special", "status"] 
+  },
+  { 
+    question: "What browsers are supported?", 
+    answer: "**Fully Supported:**\n• Chrome (v90+) - Recommended\n• Firefox (v88+)\n• Edge (v90+)\n\n**Partial Support:**\n• Safari - Works but may have minor visual issues\n• Opera - Generally works well\n\n**Not Supported:**\n• Internet Explorer - Will not work\n• Very old browser versions\n\n**Tips:** Keep your browser updated for the best experience!", 
+    keywords: ["browser", "chrome", "firefox", "safari", "edge", "support", "compatible"] 
+  },
+  { 
+    question: "What happens if I get banned?", 
+    answer: "If you're banned:\n\n**What You'll See:**\n• A ban screen explaining the reason\n• Ban duration (if temporary)\n• Appeal information\n\n**What's Affected:**\n• Cannot access UrbanShade\n• Existing sessions terminated\n• Messages preserved but inaccessible\n\n**Temporary Bans:** Wait for the countdown to expire\n**Permanent Bans:** Contact support if you believe it's a mistake\n\nAll bans are logged and can be reviewed.", 
+    keywords: ["banned", "ban", "suspended", "blocked", "account"] 
+  },
+  { 
+    question: "What is DEF-DEV mode?", 
+    answer: "DEF-DEV (Developer/Debug Mode) is an advanced tool for power users:\n\n**Features:**\n• System state inspection\n• Console and network logs\n• Performance monitoring\n• Component debugging\n• Storage management\n• Crash analysis\n\n**How to Access:**\n• Navigate to /def-dev\n• Or use Terminal command: `defdev`\n• Or press Ctrl+Shift+D\n\n**Note:** This is for advanced users. Normal use doesn't require DEF-DEV.", 
+    keywords: ["defdev", "def-dev", "developer", "debug", "tools", "advanced"] 
+  },
+  { 
+    question: "What is local mode vs cloud mode?", 
+    answer: "**Local Mode:**\n• Data stored in browser (localStorage)\n• No account required\n• Works offline\n• Data tied to single browser\n• No messaging features\n\n**Cloud Mode:**\n• Data synced to secure servers\n• Account required\n• Access from any device\n• Full messaging features\n• Automatic backups\n\n**Recommendation:** Create a free account for the best experience!", 
+    keywords: ["local", "cloud", "mode", "difference", "storage", "account"] 
+  },
+  { 
+    question: "What is NAVI?", 
+    answer: "NAVI is our multi-purpose AI system:\n\n**NAVI Autonomous:** Security monitoring system that:\n• Detects suspicious behavior\n• Assists with automated moderation\n• Protects user accounts\n\n**NAVI Support (Me!):** FAQ and support assistant that:\n• Answers common questions\n• Connects you with human support\n• Helps troubleshoot issues\n\nThe name is inspired by helpful AI companions in games. Think of me as your friendly digital assistant! 🤖", 
+    keywords: ["navi", "ai", "security", "system", "bot", "assistant"] 
+  },
+  { 
+    question: "What is the UUR Manager?", 
+    answer: "UUR (UrbanShade User Repository) is our package manager:\n\n**What It Does:**\n• Browse community-made apps and tools\n• One-click installation\n• Automatic updates\n• Rating and review system\n\n**Finding Packages:**\n• Start Menu → UUR Manager\n• Browse categories or search\n• Check ratings and reviews\n\n**Creating Packages:**\nAnyone can submit packages! Check /docs/uur for the guide.", 
+    keywords: ["uur", "manager", "packages", "repository", "apps", "store"] 
+  },
+  { 
+    question: "What is UrbanShade OS?", 
+    answer: "UrbanShade OS is a browser-based operating system simulator!\n\n**What It Is:**\n• A full desktop experience in your browser\n• Windows-like interface with modern features\n• Collection of useful web apps\n• Community-driven platform\n\n**What You Can Do:**\n• Customize your desktop\n• Use productivity apps\n• Message other users\n• Play games\n• Install community packages\n\nIt's a fun project that recreates the desktop experience entirely in the web!", 
+    keywords: ["what", "urbanshade", "about", "os", "simulator", "explain"] 
+  },
+  { 
+    question: "Where is my data stored?", 
+    answer: "**Local Mode:**\n• Browser's localStorage\n• Your device only\n• Cleared if you clear browser data\n\n**Cloud Mode:**\n• Supabase servers (EU region)\n• Encrypted at rest\n• GDPR compliant infrastructure\n• Automatic backups\n\n**Security:**\n• All transmission encrypted (HTTPS)\n• Row-level security policies\n• Access only to your own data\n\nSee /privacy for complete details.", 
+    keywords: ["data", "stored", "location", "server", "where", "storage"] 
+  },
+  { 
+    question: "Why am I seeing a maintenance screen?", 
+    answer: "Maintenance screens appear when:\n\n**Planned Maintenance:**\n• System updates and improvements\n• Usually scheduled for low-traffic times\n• Typically lasts 5-30 minutes\n\n**Unplanned Issues:**\n• Rare emergency fixes\n• Usually resolved quickly\n\n**What to Do:**\n• Check /status for updates\n• Wait and try again\n• Local mode may still work\n\nWe always try to minimize downtime!", 
+    keywords: ["maintenance", "down", "offline", "unavailable", "error"] 
+  },
+  { 
+    question: "Why can't I send messages?", 
+    answer: "Common reasons you can't send messages:\n\n**1. Rate Limited:**\n• Sending too fast\n• Wait for cooldown timer\n\n**2. Account Restricted:**\n• Check for warnings in notifications\n• Contact support if unclear\n\n**3. Technical Issues:**\n• Check internet connection\n• Try refreshing the page\n• Clear browser cache\n\n**4. Not Logged In:**\n• Messaging requires cloud account\n• Sign in to enable messaging", 
+    keywords: ["messages", "send", "blocked", "cant", "unable", "messaging"] 
+  },
+  { 
+    question: "Why did my session expire?", 
+    answer: "Sessions expire for security reasons:\n\n**When Sessions Expire:**\n• After 7 days of inactivity\n• If you sign out elsewhere\n• After password change\n• Security-triggered expiration\n\n**What to Do:**\n• Simply sign in again\n• Your data is safe\n• Enable \"Remember Me\" for longer sessions\n\n**Tip:** If sessions expire frequently, check for browser extensions that might clear data.", 
+    keywords: ["session", "expired", "logged out", "automatic", "timeout"] 
+  },
+  { 
+    question: "Can VIP users request specific admins for support?", 
+    answer: "Yes! VIP users have enhanced support options:\n\n**How to Request a Specific Admin:**\n• In your support message, mention the admin with @username\n• Example: \"@aswd I need help with...\"\n• The ticket will be assigned to that admin if available\n\n**Note:** If the requested admin is unavailable, your ticket will be assigned to another available admin to ensure quick response.\n\nThis is a VIP-exclusive feature to provide personalized support!", 
+    keywords: ["vip", "specific", "admin", "request", "choose", "pick", "assign"] 
+  }
 ].sort((a, b) => a.question.localeCompare(b.question));
 
 // FAQ matching algorithm
@@ -331,31 +496,54 @@ const Support = () => {
     return ticket.id;
   };
 
-  const escalateToHuman = async (ticketId: string, userMessage: string) => {
-    // Get random available admin
-    const { data: adminData, error: adminError } = await (supabase
-      .rpc('get_available_admin' as any) as any);
+  const escalateToHuman = async (ticketId: string, userMessage: string, requestedAdmin?: string) => {
+    let adminData: { admin_id: string; username: string }[] | null = null;
     
-    const adminArray = adminData as { admin_id: string; username: string }[] | null;
-    
-    if (adminError || !adminArray || adminArray.length === 0) {
-      // No admin available
-      const naviMessage: ChatMessage = {
-        role: 'navi',
-        content: "I apologize, but there are no support staff available at the moment. Please try again later or email us directly at emailbot00noreply@gmail.com for urgent issues.",
-        timestamp: new Date()
-      };
-      setChatMessages(prev => [...prev, naviMessage]);
+    // Check if VIP user requested a specific admin (e.g., @aswd)
+    if (requestedAdmin) {
+      const { data: specificAdmin } = await supabase
+        .from('profiles')
+        .select('user_id, username')
+        .ilike('username', requestedAdmin)
+        .single();
       
-      await (supabase.from('ticket_messages' as any).insert({
-        ticket_id: ticketId,
-        sender_type: 'navi',
-        content: naviMessage.content
-      }) as any);
-      return;
+      if (specificAdmin) {
+        // Check if they're an admin
+        const { data: isAdmin } = await supabase.rpc('has_role', { 
+          _user_id: specificAdmin.user_id, 
+          _role: 'admin' 
+        });
+        
+        if (isAdmin) {
+          adminData = [{ admin_id: specificAdmin.user_id, username: specificAdmin.username }];
+        }
+      }
     }
     
-    const admin = adminArray[0];
+    // Fall back to random admin if no specific admin found
+    if (!adminData || adminData.length === 0) {
+      const { data, error: adminError } = await (supabase
+        .rpc('get_available_admin' as any) as any);
+      adminData = data as { admin_id: string; username: string }[] | null;
+      
+      if (adminError || !adminData || adminData.length === 0) {
+        const naviMessage: ChatMessage = {
+          role: 'navi',
+          content: "I apologize, but there are no support staff available at the moment. Please try again later or email us directly at emailbot00noreply@gmail.com for urgent issues.",
+          timestamp: new Date()
+        };
+        setChatMessages(prev => [...prev, naviMessage]);
+        
+        await (supabase.from('ticket_messages' as any).insert({
+          ticket_id: ticketId,
+          sender_type: 'navi',
+          content: naviMessage.content
+        }) as any);
+        return;
+      }
+    }
+    
+    const admin = adminData[0];
     setAssignedAdminName(admin.username);
     
     // Update ticket with assigned admin
