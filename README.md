@@ -11,6 +11,7 @@ support Urbanshade OS! Im very thankful!
 Online/offline:
 ### CURRENTLY ONLINE!
 primary: `urbanshade.lovable.dev`
+
 secondary: `urbanshade-os.vercel.app/` (Note: urbanshade.vercel.app will take you to a Pressure inspired gambling website.)
 
 Update cycle: every 2nd week on Friday - Sunday we push an update (hopefully)
