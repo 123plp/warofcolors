@@ -440,6 +440,42 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          assigned_admin_id: string | null
+          created_at: string | null
+          id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_admin_id?: string | null
+          created_at?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_admin_id?: string | null
+          created_at?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       synced_settings: {
         Row: {
           created_at: string
@@ -472,6 +508,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ticket_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          faq_question: string | null
+          id: string
+          is_faq_response: boolean | null
+          sender_id: string | null
+          sender_type: string
+          ticket_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          faq_question?: string | null
+          id?: string
+          is_faq_response?: boolean | null
+          sender_id?: string | null
+          sender_type: string
+          ticket_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          faq_question?: string | null
+          id?: string
+          is_faq_response?: boolean | null
+          sender_id?: string | null
+          sender_type?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_first_login: {
         Row: {
@@ -596,6 +673,13 @@ export type Database = {
         }
         Returns: Json
       }
+      get_available_admin: {
+        Args: never
+        Returns: {
+          admin_id: string
+          username: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -613,6 +697,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "creator"
+      ticket_status:
+        | "open"
+        | "pending_human"
+        | "in_progress"
+        | "resolved"
+        | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -741,6 +831,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user", "creator"],
+      ticket_status: [
+        "open",
+        "pending_human",
+        "in_progress",
+        "resolved",
+        "closed",
+      ],
     },
   },
 } as const
