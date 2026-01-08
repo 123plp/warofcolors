@@ -670,6 +670,27 @@ export type Database = {
         }
         Relationships: []
       }
+      uur_submission_rate_limits: {
+        Row: {
+          blocked_until: string | null
+          ip_hash: string
+          submission_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          blocked_until?: string | null
+          ip_hash: string
+          submission_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          blocked_until?: string | null
+          ip_hash?: string
+          submission_count?: number | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       uur_submissions: {
         Row: {
           author: string
@@ -735,7 +756,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_uur_submissions: {
+        Row: {
+          author: string | null
+          description: string | null
+          github_url: string | null
+          id: string | null
+          package_name: string | null
+          reviewed_at: string | null
+          status: string | null
+          submitted_at: string | null
+          submitted_by: string | null
+        }
+        Insert: {
+          author?: string | null
+          description?: string | null
+          github_url?: string | null
+          id?: string | null
+          package_name?: string | null
+          reviewed_at?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          submitted_by?: string | null
+        }
+        Update: {
+          author?: string | null
+          description?: string | null
+          github_url?: string | null
+          id?: string | null
+          package_name?: string | null
+          reviewed_at?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          submitted_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       adjust_navi_thresholds: { Args: never; Returns: undefined }
