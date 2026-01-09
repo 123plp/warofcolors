@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Send, 
   Reply, 
@@ -14,10 +15,15 @@ import {
   Star,
   MessageCircle,
   Users,
-  Loader2
+  Loader2,
+  Globe,
+  UserCheck,
+  User
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+type ChatMode = 'public' | 'friends';
 
 const GlobalChat: React.FC = () => {
   const {
@@ -33,6 +39,7 @@ const GlobalChat: React.FC = () => {
 
   const [inputValue, setInputValue] = useState('');
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [chatMode, setChatMode] = useState<ChatMode>('public');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -82,6 +89,10 @@ const GlobalChat: React.FC = () => {
     return null;
   };
 
+  const getInitials = (name: string) => {
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
@@ -89,19 +100,70 @@ const GlobalChat: React.FC = () => {
         <div className="flex items-center gap-2">
           <MessageCircle className="w-5 h-5 text-primary" />
           <span className="font-semibold">Global Chat</span>
-          <Badge variant="secondary" className="text-xs">
-            <Users className="w-3 h-3 mr-1" />
-            Open
-          </Badge>
+          {/* Mode Toggle */}
+          <div className="flex items-center gap-1 ml-2">
+            <Button
+              variant={chatMode === 'public' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => setChatMode('public')}
+            >
+              <Globe className="w-3 h-3 mr-1" />
+              Public
+            </Button>
+            <Button
+              variant={chatMode === 'friends' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => setChatMode('friends')}
+              disabled={!isAuthenticated}
+              title={!isAuthenticated ? "Sign in to use Friends Only mode" : ""}
+            >
+              <UserCheck className="w-3 h-3 mr-1" />
+              Friends
+            </Button>
+          </div>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {isAuthenticated ? (
-            <span className="text-green-400">● {currentUser?.displayName}</span>
+        {/* User Profile Display */}
+        <div className="flex items-center gap-2">
+          {isAuthenticated && currentUser ? (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
+                  {getInitials(currentUser.displayName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-foreground">{currentUser.displayName}</span>
+                <span className="text-[10px] text-green-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  Online
+                </span>
+              </div>
+            </div>
           ) : (
-            <span className="text-yellow-400">● Guest Mode (10s cooldown)</span>
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className="text-[10px] bg-muted">
+                  <User className="w-3 h-3" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Guest</span>
+                <span className="text-[10px] text-yellow-400">10s cooldown</span>
+              </div>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Friends Only Mode Notice */}
+      {chatMode === 'friends' && (
+        <div className="px-3 py-2 bg-muted/50 border-b border-border/50 text-xs text-muted-foreground flex items-center gap-2">
+          <UserCheck className="w-4 h-4" />
+          <span>Friends Only mode - Only messages from friends are shown (coming soon)</span>
+        </div>
+      )}
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-3" ref={scrollRef}>
