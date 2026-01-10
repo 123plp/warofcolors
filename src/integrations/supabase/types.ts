@@ -424,36 +424,51 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           clearance: number | null
           created_at: string
           display_name: string | null
           id: string
+          is_online: boolean | null
+          last_seen: string | null
           role: string | null
           settings: Json | null
+          total_chat_messages: number | null
+          total_messages: number | null
           updated_at: string
           user_id: string
           username: string
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           clearance?: number | null
           created_at?: string
           display_name?: string | null
           id?: string
+          is_online?: boolean | null
+          last_seen?: string | null
           role?: string | null
           settings?: Json | null
+          total_chat_messages?: number | null
+          total_messages?: number | null
           updated_at?: string
           user_id: string
           username: string
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           clearance?: number | null
           created_at?: string
           display_name?: string | null
           id?: string
+          is_online?: boolean | null
+          last_seen?: string | null
           role?: string | null
           settings?: Json | null
+          total_chat_messages?: number | null
+          total_messages?: number | null
           updated_at?: string
           user_id?: string
           username?: string
@@ -625,6 +640,45 @@ export type Database = {
         }
         Relationships: []
       }
+      system_events: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          ends_at: string | null
+          event_type: string
+          id: string
+          is_active: boolean | null
+          priority: string | null
+          starts_at: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          event_type?: string
+          id?: string
+          is_active?: boolean | null
+          priority?: string | null
+          starts_at?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          event_type?: string
+          id?: string
+          is_active?: boolean | null
+          priority?: string | null
+          starts_at?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       test_emergencies: {
         Row: {
           ended_at: string | null
@@ -692,6 +746,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_first_login: {
         Row: {
@@ -824,6 +899,23 @@ export type Database = {
       }
     }
     Views: {
+      leaderboard_stats: {
+        Row: {
+          achievement_count: number | null
+          avatar_url: string | null
+          display_name: string | null
+          friend_count: number | null
+          is_online: boolean | null
+          last_seen: string | null
+          member_since: string | null
+          role: Database["public"]["Enums"]["app_role"] | null
+          total_chat_messages: number | null
+          total_messages: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
       public_uur_submissions: {
         Row: {
           author: string | null
