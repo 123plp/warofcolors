@@ -47,6 +47,7 @@ import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Team from "./pages/Team";
 import TeamGit from "./pages/TeamGit";
+import GitRedirect from "./pages/GitRedirect";
 import Support from "./pages/Support";
 import Report from "./pages/Report";
 
@@ -129,6 +130,7 @@ const App = () => (
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/team" element={<Team />} />
         <Route path="/team/git" element={<TeamGit />} />
+        <Route path="/git" element={<GitRedirect />} />
         <Route path="/support" element={<Support />} />
         <Route path="/report" element={<Report />} />
         
