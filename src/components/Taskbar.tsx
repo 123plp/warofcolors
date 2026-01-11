@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Volume2, VolumeX, Power, Cloud, CloudOff, Loader2, BellOff, WifiOff } from "lucide-react";
+import { Bell, Volume2, VolumeX, Power, Cloud, CloudOff, Loader2, BellOff, WifiOff, Lock } from "lucide-react";
 import { App } from "./Desktop";
 import { NotificationCenter } from "./NotificationCenter";
 import { ShutdownOptionsDialog } from "./ShutdownOptionsDialog";
@@ -64,11 +64,11 @@ export const Taskbar = ({
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   };
 
   const formatLastSync = (date: Date | null) => {
@@ -80,9 +80,6 @@ export const Taskbar = ({
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const openWindows = windows.filter(w => !w.minimized);
-  const minimizedWindows = windows.filter(w => w.minimized);
-
   // Group windows by app type
   const groupedWindows = windows.reduce((acc, win) => {
     const key = win.app.id;
@@ -91,81 +88,126 @@ export const Taskbar = ({
     return acc;
   }, {} as Record<string, typeof windows>);
 
+  // Get theme name from localStorage
+  const themeName = localStorage.getItem('settings_theme_name') || 'Deep Ocean';
+
   return (
     <>
-      <div className="fixed left-0 right-0 bottom-0 h-[60px] flex justify-between items-center px-5 z-[800] bg-black/60 backdrop-blur-sm border-t border-white/5 animate-slide-in-right">
-        <div className="flex items-center gap-3">
+      {/* Bottom Left - Version Info */}
+      <div className="fixed left-6 bottom-6 z-[750] flex items-center gap-3">
+        <button
+          onClick={() => setPowerMenuOpen(true)}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 border border-primary/20 transition-all"
+        >
+          <Power className="w-4 h-4" />
+        </button>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-foreground">UrbanShade OS</span>
+          <span className="text-xs text-muted-foreground">v2.9.0 • {themeName}</span>
+        </div>
+      </div>
+
+      {/* Bottom Right - Clock */}
+      <div className="fixed right-6 bottom-6 z-[750] text-right">
+        <button
+          onClick={() => {
+            setQuickSettingsOpen(!quickSettingsOpen);
+            setNotificationsOpen(false);
+          }}
+          className="text-right hover:opacity-80 transition-opacity"
+        >
+          <div className="text-5xl font-light tracking-wide text-foreground/90 font-mono">
+            {formatTime(time)}
+          </div>
+          <div className="text-sm text-muted-foreground mt-1">
+            {formatDate(time)}
+          </div>
+        </button>
+      </div>
+
+      {/* Top Taskbar - Minimal */}
+      <div className="fixed left-0 right-0 top-0 h-12 flex justify-between items-center px-4 z-[800] bg-background/40 backdrop-blur-xl border-b border-primary/10">
+        {/* Left - Start Button & Apps */}
+        <div className="flex items-center gap-2">
           <button
             onClick={onStartClick}
             data-start-button
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl glass-panel hover:bg-white/5 transition-all duration-200 hover-scale"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all duration-200"
           >
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-b from-primary to-primary/20 flex items-center justify-center text-black font-extrabold text-lg">
+            <div className="w-7 h-7 rounded-md bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-primary-foreground font-bold text-sm">
               U
             </div>
-            <div className="text-sm font-bold text-muted-foreground">Urbanshade</div>
+            <span className="text-sm font-medium text-muted-foreground">Start</span>
           </button>
 
-          <div className="flex gap-2">
+          <div className="h-6 w-px bg-primary/10 mx-1" />
+
+          {/* Pinned Apps */}
+          <div className="flex gap-1">
             {pinnedApps.map(app => (
               <button
                 key={app.id}
                 onClick={() => onPinnedClick(app)}
-                className="w-11 h-11 rounded-lg flex items-center justify-center text-primary hover:bg-white/5 transition-all duration-200 hover-scale"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white/5 transition-all duration-200"
                 title={app.name}
               >
-                <div className="w-6 h-6 flex items-center justify-center [&>svg]:w-6 [&>svg]:h-6">
+                <div className="w-5 h-5 flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5">
                   {app.icon}
                 </div>
               </button>
             ))}
           </div>
 
-          {/* Grouped Windows */}
+          {/* Open Windows */}
           {Object.keys(groupedWindows).length > 0 && (
-            <div className="flex gap-2 ml-2 pl-2 border-l border-white/10">
-              {Object.entries(groupedWindows).map(([appId, wins]) => {
-                const firstWin = wins[0];
-                const hasMinimized = wins.some(w => w.minimized);
-                const hasOpen = wins.some(w => !w.minimized);
-                
-                return (
-                  <TooltipProvider key={appId}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => onRestoreWindow?.(firstWin.id)}
-                          className={`relative w-11 h-11 rounded-lg flex items-center justify-center transition-all duration-200 hover-scale ${
-                            hasOpen 
-                              ? "text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30"
-                              : "text-primary/60 hover:text-primary hover:bg-white/5"
-                          }`}
-                        >
-                          <div className="w-6 h-6 flex items-center justify-center [&>svg]:w-6 [&>svg]:h-6">
-                            {firstWin.app.icon}
-                          </div>
+            <>
+              <div className="h-6 w-px bg-primary/10 mx-1" />
+              <div className="flex gap-1">
+                {Object.entries(groupedWindows).map(([appId, wins]) => {
+                  const firstWin = wins[0];
+                  const hasOpen = wins.some(w => !w.minimized);
+                  
+                  return (
+                    <TooltipProvider key={appId}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => onRestoreWindow?.(firstWin.id)}
+                            className={`relative w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                              hasOpen 
+                                ? "text-primary bg-primary/10 border border-primary/20"
+                                : "text-muted-foreground hover:text-primary hover:bg-white/5"
+                            }`}
+                          >
+                            <div className="w-5 h-5 flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5">
+                              {firstWin.app.icon}
+                            </div>
+                            {wins.length > 1 && (
+                              <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                                {wins.slice(0, 3).map((_, i) => (
+                                  <span key={i} className="w-1 h-1 rounded-full bg-primary" />
+                                ))}
+                              </span>
+                            )}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p className="text-xs font-medium">{firstWin.app.name}</p>
                           {wins.length > 1 && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">
-                              {wins.length}
-                            </span>
+                            <p className="text-xs text-muted-foreground">{wins.length} windows</p>
                           )}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs font-medium">{firstWin.app.name}</p>
-                        {wins.length > 1 && (
-                          <p className="text-xs text-muted-foreground">{wins.length} windows</p>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                );
-              })}
-            </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Right - System Tray */}
+        <div className="flex items-center gap-1">
           {/* Offline / Pending Sync Indicator */}
           {syncEnabled && (!isOnline || pendingChanges.length > 0) && (
             <TooltipProvider>
@@ -180,12 +222,12 @@ export const Taskbar = ({
                     ) : (
                       <>
                         <CloudOff className="w-3 h-3" />
-                        <span>{pendingChanges.length} pending</span>
+                        <span>{pendingChanges.length}</span>
                       </>
                     )}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p className="text-xs">
                     {!isOnline 
                       ? "You're offline. Changes will sync when reconnected."
@@ -204,12 +246,11 @@ export const Taskbar = ({
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => manualSync()}
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
                       isSyncing 
-                        ? "text-blue-400 bg-blue-500/10" 
-                        : "text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10"
+                        ? "text-primary bg-primary/10" 
+                        : "text-muted-foreground hover:text-primary hover:bg-white/5"
                     }`}
-                    title="Cloud sync"
                   >
                     {isSyncing ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -218,11 +259,10 @@ export const Taskbar = ({
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p className="text-xs">
                     {isSyncing ? "Syncing..." : `Last sync: ${formatLastSync(lastSyncTime)}`}
                   </p>
-                  <p className="text-xs text-muted-foreground">Click to sync now</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -231,7 +271,7 @@ export const Taskbar = ({
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white/5 transition-all"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white/5 transition-all"
             title={soundEnabled ? "Mute sounds" : "Enable sounds"}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
@@ -243,7 +283,7 @@ export const Taskbar = ({
               setNotificationsOpen(!notificationsOpen);
               setQuickSettingsOpen(false);
             }}
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white/5 transition-all relative"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white/5 transition-all relative"
             title="Notifications"
           >
             {isDndEnabled ? (
@@ -252,35 +292,8 @@ export const Taskbar = ({
               <Bell className="w-4 h-4" />
             )}
             {unreadCount > 0 && !isDndEnabled && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             )}
-          </button>
-
-          {/* Power Button */}
-          <button
-            onClick={() => setPowerMenuOpen(true)}
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all"
-            title="Power options"
-          >
-            <Power className="w-4 h-4" />
-          </button>
-
-          {/* Clock - Click to open Quick Settings */}
-          <button
-            onClick={() => {
-              setQuickSettingsOpen(!quickSettingsOpen);
-              setNotificationsOpen(false);
-            }}
-            className="flex flex-col items-end text-right hover:bg-white/5 px-3 py-1.5 rounded-lg transition-all"
-          >
-            <div className="text-sm font-mono text-foreground">
-              {formatTime(time)}
-            </div>
-            <div className="text-[10px] text-muted-foreground">
-              {formatDate(time)}
-            </div>
           </button>
         </div>
 

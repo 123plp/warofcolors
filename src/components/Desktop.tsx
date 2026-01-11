@@ -791,19 +791,34 @@ export const Desktop = ({
     <div 
       className="relative h-screen w-full overflow-hidden"
       style={{
-        background: `linear-gradient(135deg, ${bgGradient.start} 0%, ${bgGradient.end} 100%)`
+        background: `linear-gradient(160deg, ${bgGradient.start} 0%, ${bgGradient.end} 50%, ${bgGradient.start} 100%)`
       }}
       onContextMenu={handleContextMenu}
     >
+      {/* Subtle grid overlay */}
+      <div 
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, hsl(var(--primary)) 1px, transparent 1px),
+            linear-gradient(to bottom, hsl(var(--primary)) 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px'
+        }}
+      />
+
+      {/* Top gradient fade */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-background/30 to-transparent pointer-events-none z-[5]" />
+
       {/* Widgets Layer */}
       <WidgetManager onOpenApp={(appId) => {
         const app = allApps.find(a => a.id === appId);
         if (app) openWindow(app);
       }} />
 
-      {/* Desktop Icons - Grid layout */}
-      <div className="absolute inset-0 z-10 p-6 pointer-events-none">
-        <div className="grid grid-cols-[repeat(auto-fill,100px)] gap-4 pointer-events-auto">
+      {/* Desktop Icons - Grid layout with top padding for taskbar */}
+      <div className="absolute inset-0 z-10 pt-16 px-6 pb-24 pointer-events-none">
+        <div className="grid grid-cols-[repeat(auto-fill,90px)] gap-3 pointer-events-auto">
           {desktopApps.map((app) => (
             <DesktopIcon key={app.id} app={app} />
           ))}
