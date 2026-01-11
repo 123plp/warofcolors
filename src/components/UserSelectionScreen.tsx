@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Lock, Terminal as TerminalIcon, User, UserCircle, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Lock, User, Shield, Power, ChevronRight, Loader2 } from "lucide-react";
 import { ShutdownOptionsDialog } from "./ShutdownOptionsDialog";
 
 interface UserSelectionScreenProps {
@@ -14,22 +14,20 @@ export const UserSelectionScreen = ({ onLogin, onShutdown, onRestart }: UserSele
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showShutdownOptions, setShowShutdownOptions] = useState(false);
+  const [time, setTime] = useState(new Date());
 
-  // Get admin user with error handling
+  // Get admin user
   const adminData = localStorage.getItem("urbanshade_admin");
   let admin = null;
   
   try {
     if (adminData) {
       admin = JSON.parse(adminData);
-      // Validate required fields
       if (!admin.id || !admin.name) {
-        console.error("Invalid admin data structure");
         admin = null;
       }
     }
   } catch (e) {
-    console.error("Failed to parse admin data:", e);
     admin = null;
   }
 
@@ -42,25 +40,24 @@ export const UserSelectionScreen = ({ onLogin, onShutdown, onRestart }: UserSele
       additionalAccounts = JSON.parse(accountsData);
     }
   } catch (e) {
-    console.error("Failed to parse accounts data:", e);
+    // ignore
   }
 
-  // Check if guest account is enabled
   const guestAccountEnabled = localStorage.getItem("settings_guest_account_enabled") === "true";
-
-  // Combine admin and additional accounts
   const users = admin ? [admin, ...additionalAccounts] : additionalAccounts;
+
+  useEffect(() => {
+    const interval = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleUserSelect = (userId: string) => {
     const user = users.find(u => u.id === userId);
     
-    // If user has no password, log them in immediately
     if (user && (!user.password || user.password.length === 0)) {
       setLoading(true);
       localStorage.setItem("urbanshade_current_user", JSON.stringify(user));
-      setTimeout(() => {
-        onLogin(false);
-      }, 500);
+      setTimeout(() => onLogin(false), 500);
       return;
     }
     
@@ -71,7 +68,6 @@ export const UserSelectionScreen = ({ onLogin, onShutdown, onRestart }: UserSele
 
   const handleGuestLogin = () => {
     setLoading(true);
-    // Store guest user
     localStorage.setItem("urbanshade_current_user", JSON.stringify({
       id: "guest",
       name: "Guest",
@@ -80,9 +76,7 @@ export const UserSelectionScreen = ({ onLogin, onShutdown, onRestart }: UserSele
       clearance: 1,
       isGuest: true
     }));
-    setTimeout(() => {
-      onLogin(true);
-    }, 1000);
+    setTimeout(() => onLogin(true), 800);
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -95,38 +89,24 @@ export const UserSelectionScreen = ({ onLogin, onShutdown, onRestart }: UserSele
       return;
     }
 
-    // Check if user has a password
     const hasPassword = user.password && user.password.length > 0;
 
-    // If user has no password, allow login without password
     if (!hasPassword) {
       setLoading(true);
       localStorage.setItem("urbanshade_current_user", JSON.stringify(user));
-      setTimeout(() => {
-        onLogin(false);
-      }, 1000);
+      setTimeout(() => onLogin(false), 800);
       return;
     }
 
-    // If user has password, require it
     if (!password) {
-      setError("Please enter password");
+      setError("Password required");
       return;
     }
 
     setLoading(true);
 
-    // Timeout after 10 seconds
-    const timeoutId = setTimeout(() => {
-      setError("Authentication timed out. Please try again.");
-      setLoading(false);
-      setPassword("");
-    }, 10000);
-
     setTimeout(() => {
-      clearTimeout(timeoutId);
       if (password === user.password) {
-        // Store current logged in user
         localStorage.setItem("urbanshade_current_user", JSON.stringify(user));
         onLogin(false);
       } else {
@@ -134,7 +114,7 @@ export const UserSelectionScreen = ({ onLogin, onShutdown, onRestart }: UserSele
         setLoading(false);
         setPassword("");
       }
-    }, 1000);
+    }, 800);
   };
 
   const handleBack = () => {
@@ -144,201 +124,236 @@ export const UserSelectionScreen = ({ onLogin, onShutdown, onRestart }: UserSele
   };
 
   const selectedUserData = users.find(u => u.id === selectedUser);
-  const selectedUserHasPassword = selectedUserData?.password && selectedUserData.password.length > 0;
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      month: 'long', 
+      day: 'numeric'
+    });
+  };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 relative overflow-hidden">
-      {/* Ambient effects */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 -left-32 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl" />
+    <div className="h-screen w-full bg-slate-900 relative overflow-hidden">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950" />
+      
+      {/* Subtle ambient effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/3 -left-20 w-40 h-40 bg-cyan-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/3 -right-20 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Animated lines */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent animate-pulse"></div>
-      </div>
-
-      <div className="relative z-10 w-full max-w-2xl p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/30">
-              <TerminalIcon className="w-16 h-16 text-cyan-400" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold mb-2 text-cyan-400">URBANSHADE</h1>
-          <p className="text-sm text-cyan-600 font-mono">
-            SECURE OPERATING SYSTEM v2.9
-          </p>
-          <div className="mt-4 text-xs text-slate-600 font-mono">
-            [CLASSIFIED FACILITY] • DEPTH: 8,247m • PRESSURE: EXTREME
-          </div>
+      {/* TOP LEFT - Account Tiles */}
+      <div className="absolute top-8 left-8 z-20">
+        <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono mb-4">
+          <Lock className="w-4 h-4" />
+          <span className="tracking-wider">SELECT USER</span>
         </div>
-
-        {!selectedUser ? (
-          /* User Selection */
-          <div className="space-y-4">
-            <div className="bg-slate-800/50 border border-cyan-500/20 rounded-lg p-6 backdrop-blur">
-              <div className="flex items-center gap-2 mb-4 text-cyan-400">
-                <Lock className="w-5 h-5" />
-                <span className="font-bold text-sm">SELECT USER</span>
-              </div>
-
-              <div className="space-y-3">
-                {users.length === 0 ? (
-                  <div className="p-6 rounded-lg bg-red-500/10 border border-red-500/30 text-center space-y-3">
-                    <div className="text-red-400 font-bold">SYSTEM ERROR</div>
-                    <div className="text-sm text-slate-400">
-                      No user accounts found. Please reinstall the system.
-                    </div>
-                    <button
-                      onClick={() => {
-                        localStorage.removeItem("urbanshade_admin");
-                        window.location.reload();
-                      }}
-                      className="px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm hover:bg-cyan-500/30 transition-colors"
-                    >
-                      REINSTALL SYSTEM
-                    </button>
-                  </div>
+        
+        <div className="space-y-2">
+          {users.map((user) => (
+            <button
+              key={user.id}
+              onClick={() => handleUserSelect(user.id)}
+              disabled={loading}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left w-64 transition-all ${
+                selectedUser === user.id
+                  ? "bg-cyan-500/20 border-cyan-500/50 scale-[1.02]"
+                  : "bg-slate-800/60 border-slate-700/50 hover:bg-slate-700/60 hover:border-cyan-500/30"
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border ${
+                user.id === admin?.id 
+                  ? "bg-cyan-900/50 border-cyan-500/40" 
+                  : "bg-slate-700/50 border-slate-600/50"
+              }`}>
+                {user.id === admin?.id ? (
+                  <Shield className="w-5 h-5 text-cyan-400" />
                 ) : (
-                  <>
-                    {users.map((user) => (
-                      <button
-                        key={user.id}
-                        onClick={() => handleUserSelect(user.id)}
-                        className="w-full p-4 rounded-lg bg-slate-900/50 border border-cyan-500/20 hover:border-cyan-500/50 hover:bg-slate-800/50 transition-all text-left group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-full bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors border border-cyan-500/30">
-                            {user.id === admin?.id ? (
-                              <Shield className="w-7 h-7 text-cyan-400" />
-                            ) : (
-                              <User className="w-7 h-7 text-cyan-400" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-bold text-lg text-white">{user.name}</div>
-                            <div className="text-sm text-slate-400">{user.role}</div>
-                            <div className="text-xs text-cyan-600 mt-1">Clearance Level {user.clearance}</div>
-                          </div>
-                          <div className="text-2xl text-slate-600 group-hover:text-cyan-400 transition-colors">›</div>
-                        </div>
-                      </button>
-                    ))}
-
-                    {/* Guest Login - only show if enabled */}
-                    {guestAccountEnabled && (
-                      <button
-                        onClick={handleGuestLogin}
-                        disabled={loading}
-                        className="w-full p-4 rounded-lg bg-slate-900/30 border border-slate-600/30 hover:border-cyan-500/30 hover:bg-slate-800/30 transition-all text-left group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-full bg-slate-700/50 flex items-center justify-center group-hover:bg-slate-700 transition-colors border border-slate-600/30">
-                            <UserCircle className="w-7 h-7 text-slate-400 group-hover:text-cyan-400" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-bold text-lg text-slate-300 group-hover:text-white">Guest</div>
-                            <div className="text-sm text-slate-500">Limited access mode</div>
-                            <div className="text-xs text-slate-600 mt-1">Clearance Level 1</div>
-                          </div>
-                          <div className="text-2xl text-slate-600 group-hover:text-cyan-400 transition-colors">›</div>
-                        </div>
-                      </button>
-                    )}
-                  </>
+                  <User className="w-5 h-5 text-cyan-400" />
                 )}
               </div>
-            </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-white truncate">
+                  {user.name}
+                </div>
+                <div className="text-xs text-slate-400 truncate">{user.role}</div>
+              </div>
+              
+              <ChevronRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
+            </button>
+          ))}
 
-            {/* Power Options */}
-            <div className="flex justify-center">
-              <button
-                onClick={() => setShowShutdownOptions(true)}
-                className="text-xs text-slate-500 hover:text-cyan-400 transition-colors"
-              >
-                Power Options
-              </button>
-            </div>
+          {/* Guest account */}
+          {guestAccountEnabled && (
+            <button
+              onClick={handleGuestLogin}
+              disabled={loading}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl border text-left w-64 bg-slate-800/40 border-slate-700/30 hover:bg-slate-700/40 hover:border-slate-600/50 transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-slate-700/50 border border-slate-600/30 flex items-center justify-center flex-shrink-0">
+                <User className="w-5 h-5 text-slate-400" />
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-slate-300 truncate">Guest</div>
+                <div className="text-xs text-slate-500 truncate">Limited access</div>
+              </div>
+              
+              <ChevronRight className="w-4 h-4 text-slate-600 flex-shrink-0" />
+            </button>
+          )}
+        </div>
+      </div>
 
-            <div className="text-center text-xs text-slate-600 font-mono">
-              © 2025 Urbanshade Corporation
+      {/* CENTER - Message or Password Form */}
+      <div className="absolute inset-0 flex items-center justify-center z-10">
+        {!selectedUser ? (
+          /* No user selected - show prompt */
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-800/50 border border-slate-700/50 flex items-center justify-center">
+              <User className="w-10 h-10 text-slate-600" />
             </div>
+            <p className="text-xl text-slate-500 font-light">
+              Select an account to log in to
+            </p>
+            <p className="text-sm text-slate-600 mt-2 font-mono">
+              UrbanShade OS v2.9
+            </p>
           </div>
         ) : (
-          /* Password Input */
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="bg-slate-800/50 border border-cyan-500/20 rounded-lg p-6 space-y-6 backdrop-blur">
-              {/* Selected User Info */}
-              <div className="flex items-center gap-4 pb-4 border-b border-cyan-500/10">
-                <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
+          /* User selected - show password form */
+          <div className="w-full max-w-md mx-4">
+            <div className="rounded-2xl border border-cyan-500/30 bg-slate-800/80 backdrop-blur-lg p-8 shadow-2xl shadow-cyan-500/10">
+              {/* Back button */}
+              <button
+                onClick={handleBack}
+                disabled={loading}
+                className="flex items-center gap-2 text-sm text-slate-400 hover:text-cyan-400 mb-6 transition-colors"
+              >
+                <span>←</span>
+                <span>Back to users</span>
+              </button>
+              
+              {/* User info */}
+              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-slate-700/50">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center border ${
+                  selectedUserData?.id === admin?.id 
+                    ? "bg-cyan-900/50 border-cyan-500/40" 
+                    : "bg-slate-700/50 border-slate-600/50"
+                }`}>
                   {selectedUserData?.id === admin?.id ? (
                     <Shield className="w-8 h-8 text-cyan-400" />
                   ) : (
                     <User className="w-8 h-8 text-cyan-400" />
                   )}
                 </div>
-                <div className="flex-1">
-                  <div className="font-bold text-lg text-white">{selectedUserData?.name}</div>
-                  <div className="text-sm text-slate-400">{selectedUserData?.role}</div>
-                </div>
-              </div>
-
-              {selectedUserHasPassword ? (
                 <div>
-                  <label className="block text-xs text-cyan-600 mb-2 font-mono">
-                    PASSWORD
-                  </label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-900/50 border border-cyan-500/30 rounded-lg text-cyan-300 font-mono text-sm focus:border-cyan-400 focus:outline-none transition-colors"
-                    placeholder="Enter password"
-                    disabled={loading}
-                    autoFocus
-                  />
+                  <div className="text-xl font-bold text-white">{selectedUserData?.name}</div>
+                  <div className="text-sm text-slate-400">{selectedUserData?.role}</div>
+                  <div className="text-xs text-cyan-500 font-mono mt-1">
+                    Clearance Level {selectedUserData?.clearance || 1}
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-4 text-slate-400 text-sm">
-                  No password required. Click login to continue.
-                </div>
-              )}
-
-              {error && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
-                  ⚠ ERROR: {error}
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  disabled={loading}
-                  className="flex-1 px-4 py-3 rounded-lg border border-slate-600/30 text-slate-300 hover:bg-slate-700/30 transition-colors disabled:opacity-50"
-                >
-                  BACK
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 px-4 py-3 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 font-bold hover:bg-cyan-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "AUTHENTICATING..." : "LOGIN"}
-                </button>
               </div>
-            </div>
+              
+              {/* Password form */}
+              {selectedUserData?.password && selectedUserData.password.length > 0 ? (
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter password"
+                      autoFocus
+                      disabled={loading}
+                      className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-900/60 border border-slate-600/50 text-white placeholder:text-slate-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                    />
+                  </div>
 
-            <div className="text-center text-xs text-slate-600 font-mono space-y-1">
-              <div>© 2025 Urbanshade Corporation</div>
-              <div className="text-red-500/70">⚠ UNAUTHORIZED ACCESS IS PROHIBITED</div>
+                  {error && (
+                    <div className="text-sm text-red-400 text-center py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                      ⚠ {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-3 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 font-semibold hover:bg-cyan-500/30 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Authenticating...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-slate-400 text-center py-2">
+                    No password required for this account
+                  </p>
+                  
+                  <button
+                    onClick={handleLogin}
+                    disabled={loading}
+                    className="w-full py-3 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 font-semibold hover:bg-cyan-500/30 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
-          </form>
+          </div>
         )}
+      </div>
+
+      {/* BOTTOM RIGHT - Clock */}
+      <div className="absolute bottom-8 right-8 text-right z-10">
+        <div className="text-5xl font-extralight text-white/80 tracking-wide">
+          {formatTime(time)}
+        </div>
+        <div className="text-sm text-slate-400 mt-1">
+          {formatDate(time)}
+        </div>
+      </div>
+
+      {/* BOTTOM LEFT - Power button & branding */}
+      <div className="absolute bottom-8 left-8 z-10 flex items-end gap-6">
+        <button
+          onClick={() => setShowShutdownOptions(true)}
+          className="p-3 rounded-full bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-all"
+        >
+          <Power className="w-5 h-5" />
+        </button>
+        
+        <div>
+          <div className="text-sm font-medium text-white/70">UrbanShade OS</div>
+          <div className="text-xs text-slate-500">v2.9.0 • Deep Ocean</div>
+        </div>
       </div>
 
       {/* Shutdown Options Dialog */}
