@@ -1,4 +1,5 @@
 import { Bug, Terminal, Activity, Database, HardDrive, Shield, Skull, Zap, AlertTriangle, Lock, ChevronRight, Cloud, Gavel } from "lucide-react";
+import { VERSION } from "@/lib/versionInfo";
 
 interface WarningScreenProps {
   firstBootSetup: boolean;
@@ -39,7 +40,7 @@ const WarningScreen = ({
               <span className="font-mono text-sm text-amber-300">DEF-DEV@URBANSHADE:~ [AUTHORIZATION REQUIRED]</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-amber-400/60 font-mono">v3.0</span>
+              <span className="text-xs text-amber-400/60 font-mono">v{VERSION.shortVersion}</span>
               <Bug className="w-5 h-5 text-amber-400" />
             </div>
           </div>
@@ -100,7 +101,7 @@ const WarningScreen = ({
                   </ul>
                 </div>
                 <div>
-                  <h4 className="text-orange-400 font-semibold mb-2 text-xs">NEW IN v3.0</h4>
+                  <h4 className="text-orange-400 font-semibold mb-2 text-xs">NEW IN v{VERSION.shortVersion}</h4>
                   <ul className="text-gray-400 text-xs space-y-1">
                     <li className="flex items-center gap-2"><Cloud className="w-3 h-3 text-emerald-400" /> Supabase debugging panel</li>
                     <li className="flex items-center gap-2"><Gavel className="w-3 h-3 text-rose-400" /> FakeMod testing system</li>

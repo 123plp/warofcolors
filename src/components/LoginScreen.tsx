@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Lock, User, Shield, ChevronRight, Loader2, ArrowLeft } from "lucide-react";
 import { trackLogin, startSessionTracking, checkTimeAchievements } from "@/hooks/useAchievementTriggers";
+import { VERSION } from "@/lib/versionInfo";
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -306,7 +307,7 @@ export const LoginScreen = ({ onLogin }: LoginScreenProps) => {
       {/* System info - bottom left */}
       <div className="absolute bottom-6 left-6 z-10">
         <div className="text-sm font-medium text-foreground/70">UrbanShade OS</div>
-        <div className="text-xs text-muted-foreground">v3.1 Deep Ocean</div>
+        <div className="text-xs text-muted-foreground">{VERSION.displayVersion}</div>
       </div>
     </div>
   );

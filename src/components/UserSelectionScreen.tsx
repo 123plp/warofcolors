@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Lock, User, Shield, Power, ChevronRight, Loader2 } from "lucide-react";
 import { ShutdownOptionsDialog } from "./ShutdownOptionsDialog";
+import { VERSION } from "@/lib/versionInfo";
 
 interface UserSelectionScreenProps {
   onLogin: (isGuest?: boolean) => void;
@@ -228,7 +229,7 @@ export const UserSelectionScreen = ({ onLogin, onShutdown, onRestart }: UserSele
               Select an account to log in to
             </p>
             <p className="text-sm text-slate-600 mt-2 font-mono">
-              UrbanShade OS v2.9
+              UrbanShade OS v{VERSION.shortVersion}
             </p>
           </div>
         ) : (
@@ -352,7 +353,7 @@ export const UserSelectionScreen = ({ onLogin, onShutdown, onRestart }: UserSele
         
         <div>
           <div className="text-sm font-medium text-white/70">UrbanShade OS</div>
-          <div className="text-xs text-slate-500">v2.9.0 • Deep Ocean</div>
+          <div className="text-xs text-slate-500">{VERSION.displayVersion}</div>
         </div>
       </div>
 
