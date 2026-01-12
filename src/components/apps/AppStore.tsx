@@ -121,6 +121,12 @@ export const AppStore = ({ onInstall }: { onInstall?: (appId: string) => void })
   });
 
   const handleInstall = useCallback((app: StoreApp) => {
+    // Check if already installed
+    if (installedApps.includes(app.id)) {
+      toast.info(`${app.name} is already installed`);
+      return;
+    }
+
     setDownloads(prev => [...prev, { appId: app.id, progress: 0, status: 'downloading' }]);
 
     let progress = 0;
@@ -139,18 +145,15 @@ export const AppStore = ({ onInstall }: { onInstall?: (appId: string) => void })
             d.appId === app.id ? { ...d, status: 'complete' } : d
           ));
 
-          const dlList = JSON.parse(localStorage.getItem('downloads_installers') || '[]');
-          dlList.push({
-            id: Date.now().toString(),
-            name: `${app.name} Installer.exe`,
-            appId: app.id,
-            appName: app.name,
-            size: app.size,
-            downloaded: new Date().toISOString()
-          });
-          localStorage.setItem('downloads_installers', JSON.stringify(dlList));
+          // Auto-install: Add directly to installed apps
+          const currentInstalled = JSON.parse(localStorage.getItem('urbanshade_installed_apps') || '[]');
+          if (!currentInstalled.includes(app.id)) {
+            currentInstalled.push(app.id);
+            localStorage.setItem('urbanshade_installed_apps', JSON.stringify(currentInstalled));
+            setInstalledApps(currentInstalled);
+          }
 
-          toast.success(`${app.name} installed!`);
+          toast.success(`${app.name} installed successfully!`);
           onInstall?.(app.id);
           window.dispatchEvent(new Event('storage'));
 
@@ -164,7 +167,7 @@ export const AppStore = ({ onInstall }: { onInstall?: (appId: string) => void })
         ));
       }
     }, 150);
-  }, [onInstall]);
+  }, [onInstall, installedApps]);
 
   const handleUninstall = (appId: string, appName: string) => {
     if (!window.confirm(`Uninstall ${appName}?`)) return;

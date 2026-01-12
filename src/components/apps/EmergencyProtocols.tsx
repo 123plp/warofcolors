@@ -17,7 +17,7 @@ interface Protocol {
 }
 
 interface EmergencyProtocolsProps {
-  onLockdown?: (protocolName: string) => void;
+  onLockdown?: (protocolName: string, protocolId: string) => void;
 }
 
 export const EmergencyProtocols = ({ onLockdown }: EmergencyProtocolsProps) => {
@@ -179,10 +179,10 @@ export const EmergencyProtocols = ({ onLockdown }: EmergencyProtocolsProps) => {
       setActivating(false);
       toast.error(`${protocol.code} ACTIVATED!`);
       
-      // Trigger lockdown for CODE-BLACK
-      if (protocol.id === "black" && onLockdown) {
+      // Trigger lockdown for any protocol
+      if (onLockdown) {
         setTimeout(() => {
-          onLockdown(protocol.name);
+          onLockdown(protocol.name, protocol.id);
         }, 1000);
       }
     }, 2000);
