@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { trackFriendAdded } from '@/hooks/useAchievementTriggers';
 
 export interface Friend {
   id: string;
@@ -134,6 +135,11 @@ export const useFriends = () => {
       if (error) throw error;
 
       await fetchFriends();
+      
+      // Track friend achievement - count after fetching updated list
+      const updatedFriendCount = friends.length + 1;
+      trackFriendAdded(updatedFriendCount);
+      
       return { success: true };
     } catch (error: any) {
       console.error('Error accepting friend request:', error);
