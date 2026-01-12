@@ -8,6 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { 
+  trackUCGRoundWin, 
+  trackUCGGameComplete, 
+  trackUCGCloseCall 
+} from '@/hooks/useAchievementTriggers';
 
 type CardSuit = '♠' | '♥' | '♦' | '♣';
 type CardValue = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
@@ -133,7 +138,7 @@ const CardComponent = ({ card, hidden = false, className = '' }: { card: Card; h
   );
 };
 
-export const TwentyOneGame = () => {
+export const UntitledCardGame = () => {
   const [gameState, setGameState] = useState<GameState>('menu');
   const [players, setPlayers] = useState<Player[]>([]);
   const [deck, setDeck] = useState<Card[]>([]);
@@ -144,6 +149,7 @@ export const TwentyOneGame = () => {
   const [maxRounds, setMaxRounds] = useState(5);
   const [message, setMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [playerRoundsWon, setPlayerRoundsWon] = useState(0);
 
   const startGame = useCallback(() => {
     const newPlayers: Player[] = [
@@ -325,6 +331,23 @@ export const TwentyOneGame = () => {
     setGameState('roundEnd');
     
     const winners = updatedPlayers.filter(p => p.isWinner);
+    const player = updatedPlayers.find(p => p.id === 'player');
+    
+    // Track achievements for player wins
+    if (player?.isWinner) {
+      const playerHandValue = calculateHandValue(player.hand);
+      const wasBlackjack = player.hand.length === 2 && playerHandValue === 21;
+      trackUCGRoundWin(playerHandValue, wasBlackjack);
+      setPlayerRoundsWon(prev => prev + 1);
+      
+      // Check for close call achievement
+      const opponents = activePlayers.filter(p => p.id !== 'player');
+      const highestOpponentScore = Math.max(...opponents.map(p => calculateHandValue(p.hand)));
+      if (playerHandValue === 20 && highestOpponentScore === 19) {
+        trackUCGCloseCall(playerHandValue, highestOpponentScore);
+      }
+    }
+    
     if (winners.length === 1) {
       setMessage(`${winners[0].name} wins the round with ${highestScore}!`);
     } else if (winners.length > 1) {
@@ -339,6 +362,9 @@ export const TwentyOneGame = () => {
       setGameState('gameEnd');
       const winner = [...players].sort((a, b) => b.score - a.score)[0];
       setMessage(`Game Over! ${winner.name} wins with ${winner.score} points!`);
+      
+      // Track game completion achievement
+      trackUCGGameComplete(maxRounds, playerRoundsWon, botDifficulty, botCount);
     } else {
       setRoundNumber(prev => prev + 1);
       startRound(players);
@@ -348,6 +374,7 @@ export const TwentyOneGame = () => {
   const resetGame = () => {
     setGameState('menu');
     setPlayers([]);
+    setPlayerRoundsWon(0);
     setDeck([]);
     setCurrentPlayerIndex(0);
     setRoundNumber(1);
@@ -358,16 +385,16 @@ export const TwentyOneGame = () => {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 bg-gradient-to-b from-background to-muted/30">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-xl shadow-amber-500/20">
-            <span className="text-4xl font-black text-white">21</span>
+          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/20">
+            <span className="text-3xl font-black text-white">UCG</span>
           </div>
-          <h1 className="text-3xl font-black text-foreground mb-2">TWENTY ONE</h1>
+          <h1 className="text-3xl font-black text-foreground mb-2">UNTITLED CARD GAME</h1>
           <p className="text-muted-foreground">Get as close to 21 as you can!</p>
         </div>
         
         <div className="space-y-3 w-full max-w-xs">
           <Button 
-            className="w-full h-14 text-lg gap-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
+            className="w-full h-14 text-lg gap-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
             onClick={() => setGameState('setup')}
           >
             <Play className="w-5 h-5" />
@@ -484,7 +511,7 @@ export const TwentyOneGame = () => {
             <Button variant="outline" onClick={resetGame} className="flex-1">
               Back
             </Button>
-            <Button onClick={startGame} className="flex-1 gap-2 bg-gradient-to-r from-amber-500 to-orange-600">
+            <Button onClick={startGame} className="flex-1 gap-2 bg-gradient-to-r from-violet-500 to-purple-600">
               <ArrowRight className="w-4 h-4" />
               Start Game
             </Button>
@@ -499,7 +526,7 @@ export const TwentyOneGame = () => {
   const isPlayerTurn = currentPlayerIndex === 0 && !players[0]?.isStanding && !players[0]?.isBust;
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-b from-emerald-900/20 via-background to-background">
+    <div className="h-full flex flex-col bg-gradient-to-b from-violet-900/20 via-background to-background">
       {/* Header */}
       <div className="flex-shrink-0 p-3 border-b border-border/50 flex items-center justify-between bg-background/80 backdrop-blur">
         <div className="flex items-center gap-3">
@@ -637,7 +664,7 @@ export const TwentyOneGame = () => {
         
         {gameState === 'roundEnd' && (
           <Button 
-            className="w-full h-14 text-lg gap-2 bg-gradient-to-r from-amber-500 to-orange-600"
+            className="w-full h-14 text-lg gap-2 bg-gradient-to-r from-violet-500 to-purple-600"
             onClick={nextRound}
           >
             {roundNumber >= maxRounds ? (
