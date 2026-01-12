@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { 
   Settings as SettingsIcon, Monitor, Wifi, Volume2, HardDrive, Users, Clock, 
   Shield, Palette, Accessibility, Bell, Power, Search, Upload, 
   AlertTriangle, Download, ChevronRight, Code, Cloud, RefreshCw, 
   LogOut, Loader2, Zap, Moon, Sun, Eye, Lock, Database, Globe, 
-  Smartphone, ChevronDown, Check, X
+  Smartphone, ChevronDown, Check, X, Cpu, Battery, Trash2, 
+  Languages, MousePointer, Keyboard, Info, ExternalLink, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +15,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { saveState, loadState } from "@/lib/persistence";
 import { toast } from "sonner";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useOnlineAccount } from "@/hooks/useOnlineAccount";
 import { useAutoSync } from "@/hooks/useAutoSync";
+import { trackThemeChange } from "@/hooks/useAchievementTriggers";
 
 export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
   const { settings, updateSetting, resetToDefaults } = useSystemSettings();
@@ -43,7 +46,11 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
   // Display settings
   const [resolution, setResolution] = useState(loadState("settings_resolution", "1920x1080"));
   const [nightLight, setNightLight] = useState(loadState("settings_night_light", false));
+  const [nightLightIntensity, setNightLightIntensity] = useState(loadState("settings_night_light_intensity", [30]));
   const [theme, setTheme] = useState(loadState("settings_theme", "dark"));
+  const [accentColor, setAccentColor] = useState(loadState("settings_accent_color", "cyan"));
+  const [transparency, setTransparency] = useState(loadState("settings_transparency", true));
+  const [animations, setAnimations] = useState(loadState("settings_animations", true));
   
   // Network settings
   const [wifiEnabled, setWifiEnabled] = useState(loadState("settings_wifi", true));
@@ -58,8 +65,38 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(loadState("settings_notifications", true));
   const [doNotDisturb, setDoNotDisturb] = useState(loadState("settings_dnd", false));
 
+  // Apply night light filter
+  useEffect(() => {
+    if (nightLight) {
+      document.documentElement.style.filter = `sepia(${nightLightIntensity[0]}%) saturate(${100 - nightLightIntensity[0] / 2}%)`;
+    } else {
+      document.documentElement.style.filter = '';
+    }
+    return () => {
+      document.documentElement.style.filter = '';
+    };
+  }, [nightLight, nightLightIntensity]);
+
+  // Apply animations preference
+  useEffect(() => {
+    if (!animations) {
+      document.documentElement.classList.add('reduce-motion');
+    } else {
+      document.documentElement.classList.remove('reduce-motion');
+    }
+  }, [animations]);
+
   const handleSave = (key: string, value: any) => {
     saveState(key, value);
+    // Dispatch storage event for other components
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleThemeChange = async (newTheme: string) => {
+    setTheme(newTheme);
+    handleSave("settings_theme", newTheme);
+    await trackThemeChange();
+    toast.success(`Theme changed to ${newTheme}`);
   };
 
   const handleFactoryReset = () => {
@@ -118,6 +155,24 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
     reader.readAsText(file);
   };
 
+  // Calculate storage usage
+  const calculateStorageUsage = () => {
+    let total = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        total += (localStorage.getItem(key)?.length || 0) * 2; // UTF-16 = 2 bytes
+      }
+    }
+    return {
+      used: total,
+      usedMB: (total / 1024 / 1024).toFixed(2),
+      percentage: Math.min((total / (5 * 1024 * 1024)) * 100, 100) // 5MB limit
+    };
+  };
+
+  const storage = calculateStorageUsage();
+
   const categories = [
     { id: "system", name: "System", icon: Monitor, description: "Device info, updates" },
     { id: "display", name: "Display", icon: Palette, description: "Theme, resolution" },
@@ -130,7 +185,7 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
     { id: "accessibility", name: "Accessibility", icon: Accessibility, description: "Visual aids" },
     { id: "notifications", name: "Notifications", icon: Bell, description: "Alerts, DND" },
     { id: "power", name: "Power", icon: Power, description: "Battery, sleep" },
-    { id: "about", name: "About", icon: SettingsIcon, description: "System info" },
+    { id: "about", name: "About", icon: Info, description: "System info" },
   ];
 
   const filteredCategories = categories.filter(cat =>
@@ -138,20 +193,22 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
     cat.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const SettingRow = ({ 
+  const SettingCard = ({ 
     icon: Icon, 
     title, 
     description, 
-    children 
+    children,
+    className = ""
   }: { 
     icon: any; 
     title: string; 
     description?: string; 
-    children: React.ReactNode 
+    children: React.ReactNode;
+    className?: string;
   }) => (
-    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/20 border border-border/30 hover:bg-muted/30 transition-colors group">
+    <div className={`flex items-center justify-between p-4 rounded-xl bg-card/50 border border-border/50 hover:bg-card/80 hover:border-border transition-all group ${className}`}>
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
           <Icon className="w-5 h-5" />
         </div>
         <div>
@@ -159,9 +216,16 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
           {description && <div className="text-xs text-muted-foreground">{description}</div>}
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {children}
       </div>
+    </div>
+  );
+
+  const SectionHeader = ({ title, description }: { title: string; description?: string }) => (
+    <div className="mb-4">
+      <h3 className="text-lg font-semibold">{title}</h3>
+      {description && <p className="text-sm text-muted-foreground">{description}</p>}
     </div>
   );
 
@@ -169,70 +233,82 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
     switch (selectedCategory) {
       case "system":
         return (
-          <div className="space-y-3">
-            <div className="p-5 rounded-lg bg-gradient-to-br from-primary/5 to-transparent border border-primary/20">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Monitor className="w-7 h-7 text-primary" />
+          <div className="space-y-6">
+            {/* Hero Card */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
+              <div className="relative flex items-center gap-5">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/30">
+                  <Sparkles className="w-8 h-8 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">Urbanshade OS</h2>
-                  <p className="text-sm text-muted-foreground">Version 3.0</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="p-3 rounded-md bg-background/50 border border-border/30">
-                  <span className="text-muted-foreground text-xs">Device</span>
-                  <div className="font-medium">{settings.deviceName || "Urbanshade Terminal"}</div>
-                </div>
-                <div className="p-3 rounded-md bg-background/50 border border-border/30">
-                  <span className="text-muted-foreground text-xs">Architecture</span>
-                  <div className="font-medium">64-bit OS</div>
+                  <h2 className="text-2xl font-bold">UrbanShade OS</h2>
+                  <p className="text-muted-foreground">Version 3.1 Deep Ocean</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">Up to date</span>
+                    <span className="text-xs text-muted-foreground">Build 8247</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <SettingRow icon={RefreshCw} title="Automatic Updates" description="Keep system up to date">
-              <Switch 
-                checked={autoUpdates} 
-                onCheckedChange={(checked) => { setAutoUpdates(checked); handleSave("settings_auto_updates", checked); }} 
-              />
-            </SettingRow>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-xl bg-card/50 border border-border/50">
+                <div className="text-xs text-muted-foreground mb-1">Device Name</div>
+                <div className="font-medium">{settings.deviceName || "Urbanshade Terminal"}</div>
+              </div>
+              <div className="p-4 rounded-xl bg-card/50 border border-border/50">
+                <div className="text-xs text-muted-foreground mb-1">Architecture</div>
+                <div className="font-medium">64-bit OS</div>
+              </div>
+            </div>
 
-            <SettingRow icon={Database} title="Telemetry" description="Help improve the system">
-              <Switch 
-                checked={telemetry} 
-                onCheckedChange={(checked) => { setTelemetry(checked); handleSave("settings_telemetry", checked); }} 
-              />
-            </SettingRow>
+            <div className="space-y-3">
+              <SettingCard icon={RefreshCw} title="Automatic Updates" description="Keep system up to date">
+                <Switch 
+                  checked={autoUpdates} 
+                  onCheckedChange={(checked) => { setAutoUpdates(checked); handleSave("settings_auto_updates", checked); }} 
+                />
+              </SettingCard>
 
-            <Button 
-              className="w-full h-11"
-              onClick={() => {
-                toast.success("Checking for updates...");
-                setTimeout(() => onUpdate?.(), 2000);
-              }}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Check for Updates
-            </Button>
+              <SettingCard icon={Database} title="Telemetry" description="Help improve the system">
+                <Switch 
+                  checked={telemetry} 
+                  onCheckedChange={(checked) => { setTelemetry(checked); handleSave("settings_telemetry", checked); }} 
+                />
+              </SettingCard>
 
+              <Button 
+                className="w-full h-12 rounded-xl"
+                onClick={() => {
+                  toast.success("Checking for updates...");
+                  setTimeout(() => onUpdate?.(), 2000);
+                }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Check for Updates
+              </Button>
+            </div>
+
+            {/* Developer Options */}
             <Collapsible open={developerOptionsOpen} onOpenChange={setDeveloperOptionsOpen}>
               <CollapsibleTrigger asChild>
-                <Button variant="outline" className="w-full justify-between h-12 px-4 border-amber-500/20 hover:bg-amber-500/5">
-                  <div className="flex items-center gap-3">
-                    <Code className="w-4 h-4 text-amber-500" />
+                <Button variant="outline" className="w-full justify-between h-14 px-5 border-amber-500/20 hover:bg-amber-500/5 rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                      <Code className="w-5 h-5 text-amber-500" />
+                    </div>
                     <div className="text-left">
-                      <div className="font-medium text-amber-500 text-sm">Developer Options</div>
+                      <div className="font-medium text-amber-500">Developer Options</div>
                       <div className="text-xs text-muted-foreground">Advanced debugging tools</div>
                     </div>
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-amber-500 transition-transform ${developerOptionsOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-5 h-5 text-amber-500 transition-transform ${developerOptionsOpen ? 'rotate-180' : ''}`} />
                 </Button>
               </CollapsibleTrigger>
               
-              <CollapsibleContent className="mt-3 space-y-3">
-                <SettingRow icon={Code} title="Developer Mode" description="Enable DEF-DEV console access">
+              <CollapsibleContent className="mt-3 space-y-3 pl-1">
+                <SettingCard icon={Code} title="Developer Mode" description="Enable DEF-DEV console access">
                   <Switch 
                     checked={developerMode} 
                     onCheckedChange={(checked) => {
@@ -244,13 +320,13 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
                       }
                     }} 
                   />
-                </SettingRow>
+                </SettingCard>
 
-                <SettingRow icon={AlertTriangle} title="OEM Unlocking" description="Requires factory reset">
+                <SettingCard icon={AlertTriangle} title="OEM Unlocking" description="Requires factory reset">
                   <Switch checked={oemUnlocked} onCheckedChange={handleOemUnlockToggle} />
-                </SettingRow>
+                </SettingCard>
 
-                <SettingRow icon={Smartphone} title="USB Debugging" description="Allow USB connection debugging">
+                <SettingCard icon={Smartphone} title="USB Debugging" description="Allow USB connection debugging">
                   <Switch 
                     checked={usbDebugging} 
                     onCheckedChange={(checked) => {
@@ -258,7 +334,16 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
                       handleSave("settings_usb_debugging", checked);
                     }} 
                   />
-                </SettingRow>
+                </SettingCard>
+
+                <Button 
+                  variant="outline" 
+                  className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
+                  onClick={() => setShowFactoryResetDialog(true)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Factory Reset
+                </Button>
               </CollapsibleContent>
             </Collapsible>
           </div>
@@ -266,69 +351,151 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
 
       case "display":
         return (
-          <div className="space-y-3">
-            <SettingRow icon={Palette} title="Theme" description="Choose your visual style">
-              <Select value={theme} onValueChange={(v) => { setTheme(v); handleSave("settings_theme", v); }}>
-                <SelectTrigger className="w-36 h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="z-[99999] bg-background border border-border">
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
-                </SelectContent>
-              </Select>
-            </SettingRow>
+          <div className="space-y-6">
+            <SectionHeader title="Appearance" description="Customize how your system looks" />
+            
+            <div className="space-y-3">
+              <SettingCard icon={Palette} title="Theme" description="Choose your visual style">
+                <Select value={theme} onValueChange={handleThemeChange}>
+                  <SelectTrigger className="w-32 h-9 rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-[99999] bg-background border border-border rounded-lg">
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
+                    <SelectItem value="midnight">Midnight</SelectItem>
+                    <SelectItem value="ocean">Ocean</SelectItem>
+                  </SelectContent>
+                </Select>
+              </SettingCard>
 
-            <SettingRow icon={Monitor} title="Resolution" description="Display resolution">
-              <Select value={resolution} onValueChange={(v) => { setResolution(v); handleSave("settings_resolution", v); }}>
-                <SelectTrigger className="w-36 h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="z-[99999] bg-background border border-border">
-                  <SelectItem value="1920x1080">1920 x 1080</SelectItem>
-                  <SelectItem value="2560x1440">2560 x 1440</SelectItem>
-                  <SelectItem value="3840x2160">3840 x 2160</SelectItem>
-                </SelectContent>
-              </Select>
-            </SettingRow>
+              <SettingCard icon={Sparkles} title="Accent Color" description="Highlight color">
+                <Select value={accentColor} onValueChange={(v) => { setAccentColor(v); handleSave("settings_accent_color", v); }}>
+                  <SelectTrigger className="w-32 h-9 rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-[99999] bg-background border border-border rounded-lg">
+                    <SelectItem value="cyan">Cyan</SelectItem>
+                    <SelectItem value="purple">Purple</SelectItem>
+                    <SelectItem value="green">Green</SelectItem>
+                    <SelectItem value="orange">Orange</SelectItem>
+                    <SelectItem value="pink">Pink</SelectItem>
+                  </SelectContent>
+                </Select>
+              </SettingCard>
 
-            <SettingRow icon={Moon} title="Night Light" description="Reduce blue light">
-              <Switch 
-                checked={nightLight} 
-                onCheckedChange={(checked) => { setNightLight(checked); handleSave("settings_night_light", checked); }} 
-              />
-            </SettingRow>
+              <SettingCard icon={Eye} title="Transparency Effects" description="Glass-like UI elements">
+                <Switch 
+                  checked={transparency} 
+                  onCheckedChange={(checked) => { setTransparency(checked); handleSave("settings_transparency", checked); }} 
+                />
+              </SettingCard>
+
+              <SettingCard icon={Zap} title="Animations" description="Motion and transitions">
+                <Switch 
+                  checked={animations} 
+                  onCheckedChange={(checked) => { setAnimations(checked); handleSave("settings_animations", checked); }} 
+                />
+              </SettingCard>
+            </div>
+
+            <SectionHeader title="Display" description="Screen and resolution settings" />
+
+            <div className="space-y-3">
+              <SettingCard icon={Monitor} title="Resolution" description="Display resolution">
+                <Select value={resolution} onValueChange={(v) => { setResolution(v); handleSave("settings_resolution", v); }}>
+                  <SelectTrigger className="w-36 h-9 rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-[99999] bg-background border border-border rounded-lg">
+                    <SelectItem value="1920x1080">1920 × 1080</SelectItem>
+                    <SelectItem value="2560x1440">2560 × 1440</SelectItem>
+                    <SelectItem value="3840x2160">3840 × 2160</SelectItem>
+                  </SelectContent>
+                </Select>
+              </SettingCard>
+
+              <div className="p-5 rounded-xl bg-card/50 border border-border/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                      <Moon className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Night Light</div>
+                      <div className="text-xs text-muted-foreground">Reduce blue light</div>
+                    </div>
+                  </div>
+                  <Switch 
+                    checked={nightLight} 
+                    onCheckedChange={(checked) => { setNightLight(checked); handleSave("settings_night_light", checked); }} 
+                  />
+                </div>
+                {nightLight && (
+                  <div className="pt-3 border-t border-border/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-muted-foreground">Intensity</span>
+                      <span className="text-xs font-mono">{nightLightIntensity[0]}%</span>
+                    </div>
+                    <Slider 
+                      value={nightLightIntensity} 
+                      max={100} 
+                      step={5}
+                      onValueChange={(v) => { setNightLightIntensity(v); handleSave("settings_night_light_intensity", v); }}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         );
 
       case "network":
         return (
-          <div className="space-y-3">
-            <SettingRow icon={Wifi} title="Wi-Fi" description="Wireless network connection">
-              <Switch 
-                checked={wifiEnabled} 
-                onCheckedChange={(checked) => { setWifiEnabled(checked); handleSave("settings_wifi", checked); }} 
-              />
-            </SettingRow>
+          <div className="space-y-6">
+            <SectionHeader title="Network" description="Manage your connections" />
 
-            <SettingRow icon={Lock} title="VPN" description="Secure connection">
-              <Switch 
-                checked={vpnEnabled} 
-                onCheckedChange={(checked) => { setVpnEnabled(checked); handleSave("settings_vpn", checked); }} 
-              />
-            </SettingRow>
+            <div className="space-y-3">
+              <SettingCard icon={Wifi} title="Wi-Fi" description={wifiEnabled ? "Connected to URBANSHADE-SECURE" : "Disconnected"}>
+                <Switch 
+                  checked={wifiEnabled} 
+                  onCheckedChange={(checked) => { setWifiEnabled(checked); handleSave("settings_wifi", checked); }} 
+                />
+              </SettingCard>
+
+              <SettingCard icon={Lock} title="VPN" description={vpnEnabled ? "Connected" : "Not connected"}>
+                <Switch 
+                  checked={vpnEnabled} 
+                  onCheckedChange={(checked) => { setVpnEnabled(checked); handleSave("settings_vpn", checked); }} 
+                />
+              </SettingCard>
+            </div>
 
             {wifiEnabled && (
-              <div className="p-4 rounded-lg bg-muted/20 border border-border/30 space-y-2">
-                <div className="text-sm font-medium mb-3">Available Networks</div>
-                {["URBANSHADE-SECURE", "FACILITY-GUEST", "SCP-NETWORK"].map(network => (
-                  <div key={network} className="flex items-center justify-between p-3 rounded-md bg-background/50 border border-border/30 hover:bg-background/80 transition-colors cursor-pointer">
+              <div className="space-y-3">
+                <SectionHeader title="Available Networks" />
+                {[
+                  { name: "URBANSHADE-SECURE", signal: 4, connected: true, secured: true },
+                  { name: "FACILITY-GUEST", signal: 3, connected: false, secured: false },
+                  { name: "SCP-NETWORK", signal: 2, connected: false, secured: true },
+                ].map(network => (
+                  <div key={network.name} className={`flex items-center justify-between p-4 rounded-xl border transition-colors cursor-pointer ${
+                    network.connected 
+                      ? 'bg-primary/5 border-primary/30' 
+                      : 'bg-card/50 border-border/50 hover:bg-card/80'
+                  }`}>
                     <div className="flex items-center gap-3">
-                      <Wifi className="w-4 h-4 text-primary" />
-                      <span className="text-sm">{network}</span>
+                      <Wifi className={`w-5 h-5 ${network.connected ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <div>
+                        <div className="font-medium text-sm">{network.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {network.secured ? 'Secured' : 'Open'} · Signal: {network.signal}/4
+                        </div>
+                      </div>
                     </div>
-                    {network === "URBANSHADE-SECURE" && <Check className="w-4 h-4 text-green-500" />}
+                    {network.connected && <Check className="w-5 h-5 text-primary" />}
                   </div>
                 ))}
               </div>
@@ -338,14 +505,18 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
 
       case "sound":
         return (
-          <div className="space-y-3">
-            <div className="p-5 rounded-lg bg-muted/20 border border-border/30">
+          <div className="space-y-6">
+            <SectionHeader title="Sound" description="Audio and volume settings" />
+
+            <div className="p-5 rounded-xl bg-card/50 border border-border/50">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <Volume2 className="w-5 h-5 text-primary" />
-                  <span className="font-medium text-sm">Master Volume</span>
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Volume2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="font-medium">Master Volume</span>
                 </div>
-                <span className="text-sm text-muted-foreground font-mono">{volume[0]}%</span>
+                <span className="text-sm font-mono text-muted-foreground">{volume[0]}%</span>
               </div>
               <Slider 
                 value={volume} 
@@ -356,212 +527,294 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
               />
             </div>
 
-            <SettingRow icon={muteEnabled ? X : Volume2} title="Mute" description="Silence all sounds">
-              <Switch 
-                checked={muteEnabled} 
-                onCheckedChange={(checked) => { setMuteEnabled(checked); handleSave("settings_mute", checked); }} 
-              />
-            </SettingRow>
+            <div className="space-y-3">
+              <SettingCard icon={muteEnabled ? X : Volume2} title="Mute" description="Silence all sounds">
+                <Switch 
+                  checked={muteEnabled} 
+                  onCheckedChange={(checked) => { setMuteEnabled(checked); handleSave("settings_mute", checked); }} 
+                />
+              </SettingCard>
 
-            <SettingRow icon={Zap} title="Sound Effects" description="System sounds and alerts">
-              <Switch 
-                checked={soundEffects} 
-                onCheckedChange={(checked) => { setSoundEffects(checked); handleSave("settings_sound_effects", checked); }} 
-              />
-            </SettingRow>
+              <SettingCard icon={Zap} title="Sound Effects" description="System sounds and alerts">
+                <Switch 
+                  checked={soundEffects} 
+                  onCheckedChange={(checked) => { setSoundEffects(checked); handleSave("settings_sound_effects", checked); }} 
+                />
+              </SettingCard>
+            </div>
+          </div>
+        );
+
+      case "storage":
+        return (
+          <div className="space-y-6">
+            <SectionHeader title="Storage" description="Manage your storage space" />
+
+            <div className="p-5 rounded-xl bg-card/50 border border-border/50">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <HardDrive className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-medium">Local Storage</div>
+                    <div className="text-xs text-muted-foreground">{storage.usedMB} MB used of 5 MB</div>
+                  </div>
+                </div>
+                <span className="text-lg font-mono">{storage.percentage.toFixed(1)}%</span>
+              </div>
+              <Progress value={storage.percentage} className="h-2" />
+            </div>
+
+            <div className="space-y-3">
+              <Button variant="outline" className="w-full h-12 justify-start rounded-xl" onClick={handleExportSystemImage}>
+                <Download className="w-5 h-5 mr-3" />
+                Export System Image
+              </Button>
+
+              <Button variant="outline" className="w-full h-12 justify-start rounded-xl" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="w-5 h-5 mr-3" />
+                Import System Image
+              </Button>
+
+              <Button 
+                variant="outline" 
+                className="w-full h-12 justify-start rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/10"
+                onClick={() => {
+                  const keys = Object.keys(localStorage).filter(k => k.startsWith('cache_'));
+                  keys.forEach(k => localStorage.removeItem(k));
+                  toast.success(`Cleared ${keys.length} cached items`);
+                }}
+              >
+                <Trash2 className="w-5 h-5 mr-3" />
+                Clear Cache
+              </Button>
+            </div>
+
+            <input 
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleImportSystemImage}
+            />
           </div>
         );
 
       case "notifications":
         return (
-          <div className="space-y-3">
-            <SettingRow icon={Bell} title="Notifications" description="Enable system notifications">
-              <Switch 
-                checked={notificationsEnabled} 
-                onCheckedChange={(checked) => { setNotificationsEnabled(checked); handleSave("settings_notifications", checked); }} 
-              />
-            </SettingRow>
+          <div className="space-y-6">
+            <SectionHeader title="Notifications" description="Control how you receive alerts" />
 
-            <SettingRow icon={Moon} title="Do Not Disturb" description="Silence notifications">
-              <Switch 
-                checked={doNotDisturb} 
-                onCheckedChange={(checked) => { setDoNotDisturb(checked); handleSave("settings_dnd", checked); }} 
-              />
-            </SettingRow>
+            <div className="space-y-3">
+              <SettingCard icon={Bell} title="Notifications" description="Enable system notifications">
+                <Switch 
+                  checked={notificationsEnabled} 
+                  onCheckedChange={(checked) => { setNotificationsEnabled(checked); handleSave("settings_notifications", checked); }} 
+                />
+              </SettingCard>
+
+              <SettingCard icon={Moon} title="Do Not Disturb" description="Silence all notifications">
+                <Switch 
+                  checked={doNotDisturb} 
+                  onCheckedChange={(checked) => { setDoNotDisturb(checked); handleSave("settings_dnd", checked); }} 
+                />
+              </SettingCard>
+            </div>
+
+            {notificationsEnabled && (
+              <div className="p-4 rounded-xl bg-muted/20 border border-border/30">
+                <p className="text-sm text-muted-foreground">
+                  You'll receive notifications for system alerts, messages, and security events.
+                </p>
+              </div>
+            )}
           </div>
         );
 
-      case "accounts":
+      case "power":
         return (
-          <div className="space-y-3">
-            <div className="p-5 rounded-lg bg-gradient-to-br from-blue-500/5 to-transparent border border-blue-500/20">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <Cloud className="w-7 h-7 text-blue-400" />
+          <div className="space-y-6">
+            <SectionHeader title="Power" description="Battery and performance settings" />
+
+            <div className="p-5 rounded-xl bg-card/50 border border-border/50">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
+                  <Battery className="w-6 h-6 text-green-500" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-bold">{isOnlineMode ? "Connected" : "Offline Mode"}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {isOnlineMode ? `Signed in as ${profile?.username || user?.email}` : "Sign in to sync your data"}
-                  </p>
+                <div>
+                  <div className="text-2xl font-bold">100%</div>
+                  <div className="text-sm text-muted-foreground">Connected to power</div>
                 </div>
-                {isOnlineMode ? (
-                  <Button variant="outline" size="sm" onClick={signOut}>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </Button>
-                ) : (
-                  <Button size="sm">Sign In</Button>
-                )}
               </div>
             </div>
 
-            {isOnlineMode && syncEnabled && (
-              <SettingRow icon={RefreshCw} title="Sync Status" description={lastSyncTime ? `Last synced: ${new Date(lastSyncTime).toLocaleString()}` : "Never synced"}>
-                <Button variant="ghost" size="sm" onClick={manualSync} disabled={isSyncing}>
-                  {isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                </Button>
-              </SettingRow>
-            )}
+            <SettingCard icon={Cpu} title="Power Mode" description="Balance performance and efficiency">
+              <Select value={powerMode} onValueChange={(v) => { setPowerMode(v); handleSave("settings_power_mode", v); }}>
+                <SelectTrigger className="w-36 h-9 rounded-lg">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-[99999] bg-background border border-border rounded-lg">
+                  <SelectItem value="power_saver">Power Saver</SelectItem>
+                  <SelectItem value="balanced">Balanced</SelectItem>
+                  <SelectItem value="performance">High Performance</SelectItem>
+                </SelectContent>
+              </Select>
+            </SettingCard>
           </div>
         );
 
       case "about":
         return (
-          <div className="space-y-3">
-            <div className="p-6 rounded-lg bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 text-center">
-              <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <SettingsIcon className="w-8 h-8 text-primary" />
+          <div className="space-y-6">
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
+              <div className="flex items-center gap-5 mb-6">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/30">
+                  <Sparkles className="w-10 h-10 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">UrbanShade OS</h2>
+                  <p className="text-muted-foreground">Deep Ocean Edition</p>
+                </div>
               </div>
-              <h2 className="text-xl font-bold mb-1">Urbanshade OS</h2>
-              <p className="text-muted-foreground text-sm mb-3">Version 3.0.0 Build 2024</p>
-              <div className="text-xs text-muted-foreground">Urbanshade Corporation</div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-background/50">
+                  <div className="text-xs text-muted-foreground mb-1">Version</div>
+                  <div className="font-medium">3.1.0</div>
+                </div>
+                <div className="p-4 rounded-xl bg-background/50">
+                  <div className="text-xs text-muted-foreground mb-1">Build</div>
+                  <div className="font-medium">8247</div>
+                </div>
+                <div className="p-4 rounded-xl bg-background/50">
+                  <div className="text-xs text-muted-foreground mb-1">Kernel</div>
+                  <div className="font-medium">URBCORE v5.8.2</div>
+                </div>
+                <div className="p-4 rounded-xl bg-background/50">
+                  <div className="text-xs text-muted-foreground mb-1">Architecture</div>
+                  <div className="font-medium">x64</div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <input ref={fileInputRef} type="file" accept=".img,.json" onChange={handleImportSystemImage} className="hidden" />
-              <Button variant="outline" className="h-11" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="w-4 h-4 mr-2" />
-                Import Image
+            <div className="space-y-3">
+              <Button variant="outline" className="w-full h-12 justify-start rounded-xl">
+                <ExternalLink className="w-5 h-5 mr-3" />
+                Documentation
               </Button>
-              <Button variant="outline" className="h-11" onClick={handleExportSystemImage}>
-                <Download className="w-4 h-4 mr-2" />
-                Export Image
+              <Button variant="outline" className="w-full h-12 justify-start rounded-xl">
+                <ExternalLink className="w-5 h-5 mr-3" />
+                Report an Issue
               </Button>
             </div>
 
-            <Button 
-              variant="destructive" 
-              className="w-full h-11"
-              onClick={() => setShowFactoryResetDialog(true)}
-            >
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              Factory Reset
-            </Button>
+            <div className="text-center text-xs text-muted-foreground">
+              © 2024 UrbanShade Corporation. All rights reserved.
+            </div>
           </div>
         );
 
       default:
         return (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-            <div className="text-center">
-              <SettingsIcon className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p className="text-sm">Select a category to view settings</p>
-            </div>
+            <p>Select a category to configure</p>
           </div>
         );
     }
   };
 
   return (
-    <div className="flex h-full bg-background/50">
+    <div className="flex h-full bg-background">
       {/* Sidebar */}
-      <div className="w-64 border-r border-border/30 flex flex-col bg-muted/10">
-        <div className="p-3 border-b border-border/30">
+      <div className="w-64 border-r border-border/50 flex flex-col">
+        <div className="p-4 border-b border-border/50">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search settings..."
+              type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 bg-background/50 text-sm"
+              placeholder="Search settings..."
+              className="pl-10 bg-muted/50 border-border/50 rounded-xl"
             />
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-0.5">
-            {filteredCategories.map((category) => {
-              const Icon = category.icon;
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
-                    selectedCategory === category.id
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "hover:bg-muted/50 text-foreground"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{category.name}</div>
-                    <div className="text-[10px] text-muted-foreground truncate">{category.description}</div>
-                  </div>
-                  <ChevronRight className={`w-3 h-3 transition-transform ${selectedCategory === category.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                </button>
-              );
-            })}
+        <ScrollArea className="flex-1 p-2">
+          <div className="space-y-1">
+            {filteredCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
+                  selectedCategory === cat.id
+                    ? 'bg-primary/10 text-primary border border-primary/30'
+                    : 'hover:bg-muted/50 text-foreground'
+                }`}
+              >
+                <cat.icon className="w-5 h-5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">{cat.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{cat.description}</div>
+                </div>
+              </button>
+            ))}
           </div>
         </ScrollArea>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="p-5 border-b border-border/30 bg-muted/5">
-          <h1 className="text-lg font-bold">{categories.find(c => c.id === selectedCategory)?.name || "Settings"}</h1>
-          <p className="text-sm text-muted-foreground">{categories.find(c => c.id === selectedCategory)?.description}</p>
+      {/* Content */}
+      <div className="flex-1 flex flex-col">
+        <div className="p-6 border-b border-border/50">
+          <h2 className="text-xl font-bold capitalize">{selectedCategory}</h2>
         </div>
-
-        <ScrollArea className="flex-1 p-5">
+        <ScrollArea className="flex-1 p-6">
           {renderContent()}
         </ScrollArea>
       </div>
 
       {/* Factory Reset Dialog */}
       <Dialog open={showFactoryResetDialog} onOpenChange={setShowFactoryResetDialog}>
-        <DialogContent className="bg-background border-border">
+        <DialogContent className="bg-background border-red-500/30">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
+            <DialogTitle className="text-red-400 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5" />
               Factory Reset
             </DialogTitle>
             <DialogDescription>
-              This will erase ALL data and settings. This action cannot be undone.
+              This will erase all data and settings. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowFactoryResetDialog(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleFactoryReset}>Reset Everything</Button>
+            <Button variant="destructive" onClick={handleFactoryReset}>Reset System</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* OEM Unlock Dialog */}
       <Dialog open={showOemDialog} onOpenChange={setShowOemDialog}>
-        <DialogContent className="bg-background border-border">
+        <DialogContent className="bg-background border-amber-500/30">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-500">
+            <DialogTitle className="text-amber-400 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5" />
-              OEM Unlock Warning
+              {oemUnlocked ? 'Lock OEM' : 'Unlock OEM'}
             </DialogTitle>
             <DialogDescription>
-              Changing OEM unlock state requires a factory reset. All data will be erased.
+              {oemUnlocked 
+                ? 'Locking OEM will require a factory reset.'
+                : 'Unlocking OEM will allow custom system modifications but requires a factory reset.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowOemDialog(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleOemUnlockConfirm}>Continue with Reset</Button>
+            <Button 
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+              onClick={handleOemUnlockConfirm}
+            >
+              Continue & Reset
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

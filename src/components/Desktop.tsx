@@ -18,6 +18,7 @@ import { useAutoSync } from "@/hooks/useAutoSync";
 import { useWindowSnap, SnapZone } from "@/hooks/useWindowSnap";
 import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
+import { trackAppOpen, trackWindowCount, checkSessionAchievements } from "@/hooks/useAchievementTriggers";
 import { FileText, Database, Activity, Radio, FileBox, Terminal, Users, Wifi, Cpu, Mail, Globe, Music, Camera, Shield, MapPin, BookOpen, Zap, Wind, Calculator as CalcIcon, Lock, FileWarning, Grid3x3, ShoppingBag, StickyNote, Palette, Volume2, CloudRain, Clock as ClockIcon, Calendar, Newspaper, Key, HardDrive, FileArchive, FileText as PdfIcon, Sheet, Presentation, Video, Image, Mic, Gamepad2, MessageSquare, VideoIcon, MailOpen, FolderUp, TerminalSquare, Network, HardDrive as DiskIcon, Settings as SettingsIcon, Activity as PerformanceIcon, ScanLine, Languages, BookOpenCheck, Globe2, MapPinned, Telescope, Beaker, Calculator as PhysicsIcon, Fingerprint, Lock as EncryptionIcon, KeyRound, Puzzle, Skull, Monitor, Package, Star, Download, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
@@ -128,10 +129,15 @@ export const Desktop = ({
       setNextZIndex(prev => prev + 1);
       actionDispatcher.window(`Focused: ${app.name}`);
     } else {
-      setWindows(prev => [...prev, { id: app.id, app, zIndex: nextZIndex }]);
+      const newWindows = [...windows, { id: app.id, app, zIndex: nextZIndex }];
+      setWindows(newWindows);
       setNextZIndex(prev => prev + 1);
       actionDispatcher.window(`Opened: ${app.name}`);
       actionDispatcher.app(`${app.name} started`);
+      
+      // Track achievements
+      trackAppOpen(app.id);
+      trackWindowCount(newWindows.length);
     }
     setStartMenuOpen(false);
   }, [windows, nextZIndex]);

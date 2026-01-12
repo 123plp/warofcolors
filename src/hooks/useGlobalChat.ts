@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { containsProfanity, cleanProfanity } from '@/lib/profanityFilter';
+import { trackChatMessage } from '@/hooks/useAchievementTriggers';
 
 export interface ChatMessage {
   id: string;
@@ -254,6 +255,9 @@ export const useGlobalChat = () => {
         .insert(messageData);
 
       if (error) throw error;
+
+      // Track chat message for achievements
+      trackChatMessage();
 
       startCooldown(cooldown);
       return true;

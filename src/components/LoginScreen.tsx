@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Lock, User, Shield, ChevronRight, Loader2, ArrowLeft } from "lucide-react";
+import { trackLogin, startSessionTracking, checkTimeAchievements } from "@/hooks/useAchievementTriggers";
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -96,6 +97,10 @@ export const LoginScreen = ({ onLogin }: LoginScreenProps) => {
         if (adminData) {
           const admin = JSON.parse(adminData);
           if (!selectedAccount.hasPassword || password === admin.password) {
+            // Track login achievements
+            trackLogin();
+            startSessionTracking();
+            checkTimeAchievements();
             onLogin();
             return;
           }
@@ -108,6 +113,10 @@ export const LoginScreen = ({ onLogin }: LoginScreenProps) => {
             a.username === selectedAccount.username || a.id === selectedAccount.id
           );
           if (account && (!selectedAccount.hasPassword || password === account.password)) {
+            // Track login achievements
+            trackLogin();
+            startSessionTracking();
+            checkTimeAchievements();
             onLogin();
             return;
           }
