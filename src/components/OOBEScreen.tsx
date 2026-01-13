@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Waves, Shield, Globe, Keyboard, Wifi, User, Lock, Eye, EyeOff, Settings, Check, ChevronRight, Terminal, Cloud, Monitor, HelpCircle, Mail, RefreshCw, Download, Loader2 } from "lucide-react";
 import { useOnlineAccount } from "@/hooks/useOnlineAccount";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { VERSION } from "@/lib/versionInfo";
 
 interface OOBEScreenProps {
   onComplete: () => void;
@@ -351,7 +352,7 @@ export const OOBEScreen = ({ onComplete }: OOBEScreenProps) => {
         </div>
         <div className="flex items-center gap-2 text-xs text-cyan-600">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span>OOBE v2.2.0</span>
+          <span>{VERSION.displayVersion}</span>
         </div>
       </div>
 
