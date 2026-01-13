@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Monitor, Cpu, HardDrive, Shield, Power, Settings, Package, Clock, Zap, Thermometer, GripVertical, HelpCircle, ChevronUp, ChevronDown, Lock, Unlock, AlertTriangle, Download, Upload, Save, RotateCcw } from "lucide-react";
 import { useBiosSettings, BiosSettings, exportBiosConfig, importBiosConfig } from "@/hooks/useBiosSettings";
 import { toast } from "sonner";
+import { VERSION } from "@/lib/versionInfo";
 
 interface BiosScreenProps {
   onExit: () => void;
@@ -275,7 +276,7 @@ export const BiosScreen = ({ onExit }: BiosScreenProps) => {
           <Cpu className="w-4 h-4" /> System Information
         </div>
         <div className="space-y-1 text-[#00ff00]/80 font-mono text-xs">
-          <div className="flex justify-between"><span>UEFI Version:</span><span>2.9.0</span></div>
+          <div className="flex justify-between"><span>UEFI Version:</span><span>{VERSION.fullVersion}</span></div>
           <div className="flex justify-between"><span>Processor:</span><span>Urbanshade Quantum Core v4</span></div>
           <div className="flex justify-between"><span>Speed:</span><span>4.2 GHz</span></div>
           <div className="flex justify-between"><span>Cores:</span><span>8C / 16T</span></div>
@@ -754,7 +755,7 @@ export const BiosScreen = ({ onExit }: BiosScreenProps) => {
       <div className="bg-[#00ff00]/10 border-b border-[#00ff00]/30 p-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold">URBANSHADE UEFI FIRMWARE v2.9.0</h1>
+            <h1 className="text-lg font-bold">URBANSHADE UEFI FIRMWARE v{VERSION.fullVersion}</h1>
             <p className="text-xs text-[#00ff00]/60">
               {settings.secureBoot ? 'Secure Boot: ON' : 'Secure Boot: OFF'}
               {hasChanges && <span className="ml-2 text-yellow-400">• Unsaved changes</span>}

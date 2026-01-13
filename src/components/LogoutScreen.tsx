@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Waves, User } from "lucide-react";
+import { VERSION } from "@/lib/versionInfo";
 
 interface LogoutScreenProps {
   onComplete: () => void;
@@ -80,7 +81,7 @@ export const LogoutScreen = ({ onComplete, username = "User" }: LogoutScreenProp
 
       {/* Footer */}
       <div className="absolute bottom-6 text-xs text-slate-600">
-        UrbanShade OS v2.9
+        UrbanShade OS v{VERSION.shortVersion}
       </div>
     </div>
   );

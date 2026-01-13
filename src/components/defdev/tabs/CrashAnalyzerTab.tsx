@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BUGCHECK_CODES } from "@/components/BugcheckScreen";
+import { VERSION } from "@/lib/versionInfo";
 
 interface CrashReport {
   id: string;
@@ -180,7 +181,7 @@ export const CrashAnalyzerTab = () => {
     const report = {
       ...crash,
       exportedAt: new Date().toISOString(),
-      version: '3.0.0'
+      version: VERSION.fullVersion
     };
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

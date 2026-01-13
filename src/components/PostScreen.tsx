@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { getBiosSettings } from "@/hooks/useBiosSettings";
+import { VERSION } from "@/lib/versionInfo";
 
 interface PostScreenProps {
   onComplete: () => void;
@@ -110,7 +111,7 @@ export const PostScreen = ({ onComplete, onEnterBios }: PostScreenProps) => {
       <div className="p-6 text-sm leading-relaxed">
         {/* Header */}
         <div className="mb-4">
-          <div className="text-lg font-bold text-white mb-1">URBANSHADE UEFI BIOS v2.9.0</div>
+          <div className="text-lg font-bold text-white mb-1">URBANSHADE UEFI BIOS v{VERSION.fullVersion}</div>
           <div className="text-xs text-[#00ff00]/70">Copyright (C) 2025 Urbanshade Corporation</div>
           <div className="text-xs text-[#00ff00]/70">Licensed for Hadal Blacksite Operations</div>
         </div>
@@ -157,7 +158,7 @@ export const PostScreen = ({ onComplete, onEnterBios }: PostScreenProps) => {
         <div className="flex justify-between text-xs text-[#00ff00]/60">
           <span>URBANSHADE HADAL BLACKSITE</span>
           <span>{biosSettings.secureBoot ? 'Secure Boot: ON' : 'Secure Boot: OFF'}</span>
-          <span>UEFI v2.9.0</span>
+          <span>UEFI v{VERSION.fullVersion}</span>
         </div>
       </div>
     </div>

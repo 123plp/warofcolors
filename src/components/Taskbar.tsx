@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Bell, Volume2, VolumeX, Power, Cloud, CloudOff, Loader2, BellOff, WifiOff, Lock, Clock } from "lucide-react";
+import { VERSION } from "@/lib/versionInfo";
 
 // Separate component for notification button to handle anchor ref
 const NotificationButton = ({ 
@@ -148,7 +149,7 @@ export const Taskbar = ({
         </button>
         <div className="flex flex-col">
           <span className="text-sm font-medium text-foreground">UrbanShade OS</span>
-          <span className="text-xs text-muted-foreground">v2.9.0 • {themeName}</span>
+          <span className="text-xs text-muted-foreground">{VERSION.displayVersion}</span>
         </div>
       </div>
 

@@ -87,6 +87,7 @@ const AVAILABLE_APPS: StoreApp[] = [
   { id: "disk-manager", name: "Disk Utility", category: "System", description: "Storage management", version: "6.0.1", size: "8.9 MB", rating: 4.5, downloads: "10.1K", permissions: ['System', 'Admin'], lastUpdate: '2024-01-06' },
   { id: "game-center", name: "Game Hub", category: "Games", description: "Mini-games collection", version: "2.0.0", size: "34.2 MB", rating: 4.5, downloads: "42.8K", new: true, permissions: ['Graphics', 'Audio'], lastUpdate: '2024-01-23' },
   { id: "containment-game", name: "Containment Breach", category: "Games", description: "Survive the night shift monitoring escaped anomalies. Use cameras, doors, and lures to prevent containment breaches until 6AM.", version: "1.0.0", size: "18.7 MB", rating: 4.9, downloads: "67.2K", featured: true, new: true, permissions: ['Graphics', 'Audio', 'Notifications'], lastUpdate: '2024-01-24' },
+  { id: "untitled-card-game", name: "Untitled Card Game", category: "Games", description: "A strategic deck-building card game. Collect cards, build powerful decks, and defeat your opponents in tactical battles.", version: "1.0.0", size: "12.4 MB", rating: 4.6, downloads: "23.5K", new: true, permissions: ['Graphics', 'Audio'], lastUpdate: '2024-01-25' },
   { id: "encryption", name: "File Encryptor", category: "Security", description: "AES-256 encryption", version: "6.2.0", size: "4.8 MB", rating: 4.9, downloads: "27.4K", permissions: ['File Access', 'Encryption'], lastUpdate: '2024-01-02' },
   { id: "password-manager", name: "Password Vault", category: "Security", description: "Secure passwords", version: "7.1.3", size: "5.6 MB", rating: 4.7, downloads: "38.1K", featured: true, permissions: ['Encryption', 'System'], lastUpdate: '2024-01-17' },
 ].map(app => ({ ...app, reviews: generateReviews(app.name) }));
@@ -120,6 +121,12 @@ export const AppStore = ({ onInstall }: { onInstall?: (appId: string) => void })
   });
 
   const handleInstall = useCallback((app: StoreApp) => {
+    // Check if already installed
+    if (installedApps.includes(app.id)) {
+      toast.info(`${app.name} is already installed`);
+      return;
+    }
+
     setDownloads(prev => [...prev, { appId: app.id, progress: 0, status: 'downloading' }]);
 
     let progress = 0;
@@ -138,18 +145,15 @@ export const AppStore = ({ onInstall }: { onInstall?: (appId: string) => void })
             d.appId === app.id ? { ...d, status: 'complete' } : d
           ));
 
-          const dlList = JSON.parse(localStorage.getItem('downloads_installers') || '[]');
-          dlList.push({
-            id: Date.now().toString(),
-            name: `${app.name} Installer.exe`,
-            appId: app.id,
-            appName: app.name,
-            size: app.size,
-            downloaded: new Date().toISOString()
-          });
-          localStorage.setItem('downloads_installers', JSON.stringify(dlList));
+          // Auto-install: Add directly to installed apps
+          const currentInstalled = JSON.parse(localStorage.getItem('urbanshade_installed_apps') || '[]');
+          if (!currentInstalled.includes(app.id)) {
+            currentInstalled.push(app.id);
+            localStorage.setItem('urbanshade_installed_apps', JSON.stringify(currentInstalled));
+            setInstalledApps(currentInstalled);
+          }
 
-          toast.success(`${app.name} installed!`);
+          toast.success(`${app.name} installed successfully!`);
           onInstall?.(app.id);
           window.dispatchEvent(new Event('storage'));
 
@@ -163,7 +167,7 @@ export const AppStore = ({ onInstall }: { onInstall?: (appId: string) => void })
         ));
       }
     }, 150);
-  }, [onInstall]);
+  }, [onInstall, installedApps]);
 
   const handleUninstall = (appId: string, appName: string) => {
     if (!window.confirm(`Uninstall ${appName}?`)) return;

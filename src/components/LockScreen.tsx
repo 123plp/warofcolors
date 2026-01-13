@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Lock, Terminal, User, ChevronUp, Eye, EyeOff, Cloud, Wifi } from "lucide-react";
+import { VERSION } from "@/lib/versionInfo";
 
 interface LockScreenProps {
   onUnlock: () => void;
@@ -156,7 +157,7 @@ export const LockScreen = ({ onUnlock, username = "Administrator" }: LockScreenP
         </div>
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4" />
-          <span className="text-xs font-mono">URBANSHADE v2.9</span>
+          <span className="text-xs font-mono">URBANSHADE v{VERSION.shortVersion}</span>
         </div>
       </div>
 

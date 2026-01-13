@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Info, CheckCircle, ShieldCheck, Github, BookOpen, FastForward, AlertTriangle, Lock, Database, Eye, Cloud, Wifi } from "lucide-react";
+import { VERSION } from "@/lib/versionInfo";
 
 interface DisclaimerScreenProps {
   onAccept: (skipInstall?: boolean) => void;
@@ -26,7 +27,7 @@ export const DisclaimerScreen = ({ onAccept }: DisclaimerScreenProps) => {
           </p>
           <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20">
             <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-sm font-mono text-cyan-400">Version 2.9.0 • Simulation Active</span>
+            <span className="text-sm font-mono text-cyan-400">{VERSION.displayVersion} • Simulation Active</span>
           </div>
         </div>
 
