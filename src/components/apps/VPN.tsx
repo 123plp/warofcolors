@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Shield, Power, Globe, Lock, Zap, MapPin, Activity } from "lucide-react";
+import { Shield, Power, Globe, Lock, Zap, MapPin, Activity, Skull, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { vpnState } from "@/lib/vpnState";
 
 interface VPNServer {
   id: string;
@@ -21,6 +22,12 @@ const SERVERS: VPNServer[] = [
   { id: "au-syd-1", name: "Sydney #1", country: "Australia", city: "Sydney", latency: 187, load: 29 },
   { id: "sg-sin-1", name: "Singapore #1", country: "Singapore", city: "Singapore", latency: 156, load: 67 },
   { id: "fr-par-1", name: "Paris #1", country: "France", city: "Paris", latency: 92, load: 41 },
+];
+
+// Dark web servers - only visible when VPN is connected
+const DARK_SERVERS: VPNServer[] = [
+  { id: "dark-abyss-1", name: "Abyss Node", country: "???", city: "The Depths", latency: 666, load: 13 },
+  { id: "dark-void-1", name: "Void Relay", country: "???", city: "Blacksite", latency: 999, load: 7 },
 ];
 
 export const VPN = () => {
@@ -57,8 +64,16 @@ export const VPN = () => {
       setVpnIP(mockIP);
       setConnected(true);
       setConnecting(false);
+      vpnState.setConnected(true, selectedServer.id);
       toast.dismiss();
       toast.success(`Connected to ${selectedServer.name}!`);
+      
+      // Show dark web hint for dark servers
+      if (selectedServer.id.startsWith("dark-")) {
+        setTimeout(() => {
+          toast.info("Dark network access enabled. Try visiting depths.urbanshade.local in the browser...", { duration: 5000 });
+        }, 1000);
+      }
     }, 2000);
   };
 
@@ -66,6 +81,7 @@ export const VPN = () => {
     setConnected(false);
     setVpnIP("");
     setDataTransferred({ up: 0, down: 0 });
+    vpnState.setConnected(false, null);
     toast.success("Disconnected from VPN");
   };
 
@@ -92,7 +108,7 @@ export const VPN = () => {
           </div>
         </div>
         
-        <div className="p-3 space-y-2">
+        <div className="p-3 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]">
           {SERVERS.map(server => (
             <div
               key={server.id}
@@ -124,6 +140,50 @@ export const VPN = () => {
               </div>
             </div>
           ))}
+          
+          {/* Dark Servers Section */}
+          <div className="mt-4 pt-4 border-t border-red-500/20">
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <Skull className="w-4 h-4 text-red-400" />
+              <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Dark Network</span>
+            </div>
+            
+            {DARK_SERVERS.map(server => (
+              <div
+                key={server.id}
+                onClick={() => !connected && setSelectedServer(server)}
+                className={`p-3 rounded-lg cursor-pointer transition-colors border mb-2 ${
+                  selectedServer?.id === server.id 
+                    ? 'bg-red-500/20 border-red-500/40' 
+                    : 'border-red-500/20 hover:bg-red-500/10 bg-red-950/20'
+                } ${connected ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <div className="font-bold text-red-400">{server.name}</div>
+                    <div className="text-xs text-red-400/60">
+                      {server.city}, {server.country}
+                    </div>
+                  </div>
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                </div>
+                
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1 text-red-400/70">
+                    <Activity className="w-3 h-3" />
+                    <span>{server.latency}ms</span>
+                  </div>
+                  <div className="text-red-400/70">
+                    Load: {server.load}%
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            <p className="text-[10px] text-red-400/50 px-1 mt-2">
+              ⚠️ These nodes access restricted networks. Use at your own risk.
+            </p>
+          </div>
         </div>
       </div>
 

@@ -1,12 +1,16 @@
-import { useState } from "react";
-import { Globe, ArrowLeft, ArrowRight, RotateCw, Home, Lock, Star, Search, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Globe, ArrowLeft, ArrowRight, RotateCw, Home, Lock, Star, Search, ExternalLink, Skull, AlertTriangle, Eye, ShieldOff } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { vpnState } from "@/lib/vpnState";
+import { toast } from "sonner";
 
 interface Page {
   url: string;
   title: string;
   content: JSX.Element;
+  requiresVPN?: boolean;
+  requiresDarkVPN?: boolean;
 }
 
 export const Browser = () => {
@@ -362,6 +366,138 @@ export const Browser = () => {
           </div>
         </div>
       )
+    },
+    // Dark Web Pages - Require VPN with Dark Server
+    "depths.urbanshade.local": {
+      url: "depths.urbanshade.local",
+      title: "THE DEPTHS - Classified",
+      requiresDarkVPN: true,
+      content: (
+        <div className="p-6 max-w-3xl mx-auto">
+          <div className="mb-6 p-4 rounded-lg bg-red-950/30 border border-red-500/30">
+            <div className="flex items-center gap-2 text-red-400 text-sm mb-2">
+              <Skull className="w-4 h-4" />
+              <span className="font-mono">RESTRICTED ACCESS - DARK NETWORK</span>
+            </div>
+          </div>
+          
+          <h1 className="text-xl font-bold text-red-400 mb-6 font-mono">// THE DEPTHS</h1>
+          
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-red-950/20 border border-red-500/20">
+              <h3 className="font-bold text-red-400 text-sm mb-3 font-mono">INCIDENT_LOG_Z13_BREACH.txt</h3>
+              <div className="text-sm space-y-2 font-mono text-red-400/80">
+                <div className="text-xs opacity-60">[RECOVERED DATA - CORRUPTED]</div>
+                <p>Day 47: The subject has... changed. It no longer responds to containment protocols.</p>
+                <p>Day 48: ██████████ reported seeing it outside the tank. Impossible. The pressure would...</p>
+                <p>Day 49: Three casualties. The official report says "equipment malfunction." We both know that's a lie.</p>
+                <p className="text-red-400">[DATA EXPUNGED]</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-red-950/20 border border-red-500/20">
+              <h3 className="font-bold text-red-400 text-sm mb-3 font-mono">PROJECT_ABYSS.enc</h3>
+              <div className="text-sm space-y-2 font-mono text-red-400/80">
+                <p>The deeper you go, the less the rules apply.</p>
+                <p>At 8,000 meters, physics becomes... negotiable.</p>
+                <p>At 10,000 meters, reality is merely a suggestion.</p>
+                <p className="text-yellow-400 text-xs mt-4">// Achievement unlocked: Into The Abyss</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-black/50 border border-red-500/30">
+              <h3 className="font-bold text-red-400 text-sm mb-3 font-mono flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                OBSERVER_NOTES.log
+              </h3>
+              <div className="text-xs space-y-1 font-mono text-red-400/60">
+                <p>They think they're studying the specimens.</p>
+                <p>They don't realize the specimens have been studying them.</p>
+                <p>Every camera. Every sensor. Every terminal.</p>
+                <p className="text-cyan-400">It watches.</p>
+                <p className="text-cyan-400">It waits.</p>
+                <p className="text-cyan-400">It learns.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    "blackmarket.urbanshade.local": {
+      url: "blackmarket.urbanshade.local",
+      title: "The Black Market",
+      requiresDarkVPN: true,
+      content: (
+        <div className="p-6 max-w-3xl mx-auto">
+          <div className="mb-6 p-4 rounded-lg bg-purple-950/30 border border-purple-500/30">
+            <div className="flex items-center gap-2 text-purple-400 text-sm mb-2">
+              <ShieldOff className="w-4 h-4" />
+              <span className="font-mono">UNAUTHORIZED TRADING POST</span>
+            </div>
+          </div>
+          
+          <h1 className="text-xl font-bold text-purple-400 mb-6 font-mono">FACILITY BLACK MARKET</h1>
+          
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-purple-950/20 border border-purple-500/20">
+              <h3 className="font-bold text-purple-400 text-sm mb-3">Available "Services"</h3>
+              <div className="space-y-2 text-sm text-purple-400/70">
+                <div className="flex justify-between items-center p-2 rounded bg-black/30">
+                  <span>Falsified Clearance Cards</span>
+                  <span className="text-yellow-400">500 K₩</span>
+                </div>
+                <div className="flex justify-between items-center p-2 rounded bg-black/30">
+                  <span>Security Camera Blind Spots Map</span>
+                  <span className="text-yellow-400">250 K₩</span>
+                </div>
+                <div className="flex justify-between items-center p-2 rounded bg-black/30">
+                  <span>Specimen Feeding Schedule (Leaked)</span>
+                  <span className="text-yellow-400">100 K₩</span>
+                </div>
+                <div className="flex justify-between items-center p-2 rounded bg-black/30 border border-red-500/30">
+                  <span className="text-red-400">Z-13 Containment Override Codes</span>
+                  <span className="text-red-400">DO NOT PURCHASE</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-yellow-950/20 border border-yellow-500/20">
+              <h3 className="font-bold text-yellow-400 text-sm mb-3">Whisper Network</h3>
+              <div className="text-xs space-y-2 font-mono text-yellow-400/70">
+                <p>{">"} [ANON_47]: Anyone else hear the scratching in Sector 7?</p>
+                <p>{">"} [ANON_12]: Don't ask questions you don't want answered.</p>
+                <p>{">"} [ANON_89]: The walls have ears. And eyes. And teeth.</p>
+                <p>{">"} [SYSTEM]: User ANON_89 has been disconnected.</p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+              <AlertTriangle className="w-4 h-4 inline mr-2" />
+              This page is not real. It's part of the UrbanShade experience. Don't actually try to buy anything. 🙃
+            </div>
+          </div>
+        </div>
+      )
+    },
+    "void.urbanshade.local": {
+      url: "void.urbanshade.local",
+      title: "V̷͎̓O̶̜͝I̵̛̜D̵̰̊",
+      requiresDarkVPN: true,
+      content: (
+        <div className="p-6 max-w-3xl mx-auto min-h-[60vh] flex flex-col items-center justify-center">
+          <div className="text-center space-y-6 animate-pulse">
+            <div className="text-6xl font-mono text-red-500/30">
+              ẘ̸̛̳e̷̜̓ ̵̢͑s̵͚̈́e̵̳͊ë̵̝́ ̷̡̛y̵̳̓o̷͎̊u̵̲̎
+            </div>
+            <div className="text-sm font-mono text-red-400/50">
+              w̵̛̭ẹ̶͠ ̵̨̛k̸̙̕n̵͕̄o̶̗͊w̵̲̃ ̴̖́w̵̙̒h̷͖̀a̷̧͂t̵̰̓ ̶̨̾y̶̡̓o̷̝͑u̶͈͌ ̴̨̆d̵̮͝i̴̞͂d̷̰͝
+            </div>
+            <div className="text-xs text-muted-foreground/30 mt-8">
+              [This page intentionally left cryptic for atmosphere. You're not actually in danger. Probably.]
+            </div>
+          </div>
+        </div>
+      )
     }
   };
 
@@ -370,9 +506,35 @@ export const Browser = () => {
   const [history, setHistory] = useState<string[]>(["urbanshade.local"]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [bookmarks] = useState(["urbanshade.local", "docs.urbanshade.local", "uur.urbanshade.local"]);
+  const [isVPNConnected, setIsVPNConnected] = useState(false);
+  const [isDarkVPN, setIsDarkVPN] = useState(false);
+
+  // Subscribe to VPN state changes
+  useEffect(() => {
+    const unsubscribe = vpnState.subscribe((connected, serverId) => {
+      setIsVPNConnected(connected);
+      setIsDarkVPN(connected && (serverId?.startsWith("dark-") || false));
+    });
+    
+    // Check initial state
+    setIsVPNConnected(vpnState.isConnected());
+    const serverId = vpnState.getServerId();
+    setIsDarkVPN(vpnState.isConnected() && (serverId?.startsWith("dark-") || false));
+    
+    return unsubscribe;
+  }, []);
 
   const navigate = (url: string) => {
-    if (pages[url]) {
+    const page = pages[url];
+    if (page) {
+      // Check VPN requirements
+      if (page.requiresDarkVPN && !isDarkVPN) {
+        toast.error("Access denied. Connect to a Dark Network VPN server to access this site.", {
+          description: "Try the Abyss Node or Void Relay in the VPN app."
+        });
+        return;
+      }
+      
       setCurrentUrl(url);
       setInputUrl(url);
       const newHistory = [...history.slice(0, historyIndex + 1), url];

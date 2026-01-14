@@ -119,6 +119,28 @@ export const useOnlineAccount = () => {
     return { data, error };
   };
 
+  const signInWithGoogle = async () => {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    if (!error) {
+      localStorage.setItem("urbanshade_online_account", "true");
+      setIsOnlineMode(true);
+    }
+
+    return { data, error };
+  };
+
   const signIn = async (email: string, password: string) => {
     
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -333,6 +355,7 @@ export const useOnlineAccount = () => {
     isDevMode,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     enableOnlineMode,
     disableOnlineMode,
