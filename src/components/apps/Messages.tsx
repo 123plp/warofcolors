@@ -11,7 +11,7 @@ import { useFriends } from "@/hooks/useFriends";
 import { useOnlineAccount } from "@/hooks/useOnlineAccount";
 import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "@/components/shared/UserAvatar";
-import { ProfileCard } from "@/components/shared/ProfileCard";
+import { ProfilePopover } from "@/components/shared/ProfilePopover";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -497,7 +497,6 @@ export const Messages = () => {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <UserAvatar 
-                            avatarUrl={msg.sender_profile?.avatar_url}
                             username={msg.sender_profile?.username || 'U'}
                             size="sm"
                             showOnlineStatus={false}
@@ -505,13 +504,11 @@ export const Messages = () => {
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="p-0 w-auto" align="start">
-                        <ProfileCard 
+                        <ProfilePopover 
                           userId={msg.sender_id}
                           username={msg.sender_profile?.username || 'Unknown'}
-                          displayName={msg.sender_profile?.display_name}
-                          avatarUrl={msg.sender_profile?.avatar_url}
+                          displayName={msg.sender_profile?.display_name || undefined}
                           role={msg.sender_profile?.role}
-                          isOnline={msg.sender_profile?.is_online}
                         />
                       </PopoverContent>
                     </Popover>
@@ -629,22 +626,17 @@ export const Messages = () => {
                             <PopoverTrigger asChild>
                               <button onClick={(e) => e.stopPropagation()}>
                                 <UserAvatar 
-                                  avatarUrl={friendUser?.avatar_url}
                                   username={friendUser?.username || 'U'}
                                   size="sm"
-                                  showOnlineStatus
-                                  isOnline={friendUser?.is_online}
                                 />
                               </button>
                             </PopoverTrigger>
                             <PopoverContent className="p-0 w-auto" align="start">
-                              <ProfileCard 
+                              <ProfilePopover 
                                 userId={friendUser?.user_id}
                                 username={friendUser?.username || 'Unknown'}
-                                displayName={friendUser?.display_name}
-                                avatarUrl={friendUser?.avatar_url}
-                                role={friendUser?.role}
-                                isOnline={friendUser?.is_online}
+                                displayName={friendUser?.display_name || undefined}
+                                role={friendUser?.role || undefined}
                               />
                             </PopoverContent>
                           </Popover>
@@ -680,29 +672,22 @@ export const Messages = () => {
                         <PopoverTrigger asChild>
                           <button>
                             <UserAvatar 
-                              avatarUrl={u.avatar_url}
                               username={u.username || 'U'}
                               size="sm"
-                              showOnlineStatus
-                              isOnline={u.is_online}
                             />
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="p-0 w-auto" align="start">
-                          <ProfileCard 
+                          <ProfilePopover 
                             userId={u.user_id}
                             username={u.username || 'Unknown'}
-                            displayName={u.display_name}
-                            avatarUrl={u.avatar_url}
-                            role={u.role}
-                            isOnline={u.is_online}
+                            displayName={u.display_name || undefined}
                           />
                         </PopoverContent>
                       </Popover>
                       <div>
                         <div className="flex items-center gap-1">
                           <span className="font-medium text-sm">{u.display_name || u.username}</span>
-                          <UserBadge username={u.username || ''} role={u.role} />
                         </div>
                         <div className="text-xs text-muted-foreground">@{u.username}</div>
                       </div>
@@ -814,20 +799,17 @@ export const Messages = () => {
                     <PopoverTrigger asChild>
                       <button>
                         <UserAvatar 
-                          avatarUrl={selected.sender_profile?.avatar_url}
                           username={selected.sender_profile?.username || 'U'}
                           size="md"
                         />
                       </button>
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-auto" align="start">
-                      <ProfileCard 
+                      <ProfilePopover 
                         userId={selected.sender_id}
                         username={selected.sender_profile?.username || 'Unknown'}
-                        displayName={selected.sender_profile?.display_name}
-                        avatarUrl={selected.sender_profile?.avatar_url}
+                        displayName={selected.sender_profile?.display_name || undefined}
                         role={selected.sender_profile?.role}
-                        isOnline={selected.sender_profile?.is_online}
                       />
                     </PopoverContent>
                   </Popover>
