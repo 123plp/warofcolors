@@ -426,8 +426,8 @@ export async function trackDarkWebVisit(siteId: 'depths' | 'blackmarket' | 'void
   const userId = await getCurrentUserId();
   if (!userId) return;
 
-  const stored = localStorage.getItem(DARK_WEB_STORAGE.VISITED_SITES);
-  const visitedSites: string[] = stored ? JSON.parse(stored) : [];
+  const storedSites = localStorage.getItem(DARK_WEB_STORAGE.VISITED_SITES);
+  const visitedSites: string[] = storedSites ? JSON.parse(storedSites) : [];
   
   if (!visitedSites.includes(siteId)) {
     visitedSites.push(siteId);
@@ -445,18 +445,6 @@ export async function trackDarkWebVisit(siteId: 'depths' | 'blackmarket' | 'void
     // Check if all sites visited
     if (visitedSites.includes('depths') && visitedSites.includes('blackmarket') && visitedSites.includes('void')) {
       await grantAchievement(userId, 'dark_web_master');
-    }
-  }
-
-  const stored = localStorage.getItem(CONTAINMENT_STORAGE.ENCOUNTERED_SUBJECTS);
-  const encountered: string[] = stored ? JSON.parse(stored) : [];
-  
-  if (!encountered.includes(subjectId)) {
-    encountered.push(subjectId);
-    localStorage.setItem(CONTAINMENT_STORAGE.ENCOUNTERED_SUBJECTS, JSON.stringify(encountered));
-    
-    if (encountered.length >= 5) {
-      await grantAchievement(userId, 'containment_all_subjects');
     }
   }
 }
