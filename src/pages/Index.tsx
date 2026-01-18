@@ -14,6 +14,7 @@ import { LockdownScreen } from "@/components/LockdownScreen";
 import { NaviLockoutScreen } from "@/components/NaviLockoutScreen";
 import { FirstTimeTour } from "@/components/FirstTimeTour";
 import { RecoveryMode } from "@/components/RecoveryMode";
+import { RecoveryEnvironment } from "@/components/RecoveryEnvironment";
 import { DisclaimerScreen } from "@/components/DisclaimerScreen";
 import { OOBEScreen } from "@/components/OOBEScreen";
 import { ChangelogDialog } from "@/components/ChangelogDialog";
@@ -708,7 +709,6 @@ const Index = () => {
         sessionStorage.setItem("urbanshade_safe_mode", "true");
         setSafeMode(true);
         setBooted(true);
-        toast.info("Entering Safe Mode...");
       }}
     />;
   }

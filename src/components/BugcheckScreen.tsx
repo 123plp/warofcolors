@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Copy, Download, RefreshCw, Bug, Terminal, Shield, Cpu, Clock } from "lucide-react";
+import { RefreshCw, Wrench, ChevronRight } from "lucide-react";
 
 export interface BugcheckData {
   code: string;
@@ -14,6 +14,7 @@ interface BugcheckScreenProps {
   bugcheck: BugcheckData;
   onRestart: () => void;
   onReportToDev: () => void;
+  onRecovery?: () => void;
 }
 
 // Real bugcheck codes with detailed descriptions
@@ -89,6 +90,15 @@ export const BUGCHECK_CODES: Record<string, {
     possibleCauses: ["Too many files", "Large file stored", "Quota limit reached"],
     suggestedFixes: ["Delete unnecessary files", "Clear old data", "Use recovery mode"]
   },
+  STORAGE_QUOTA_EXCEEDED: { 
+    hex: "0x00000012", 
+    severity: "HIGH", 
+    category: "Storage",
+    userDescription: "Storage space has been exhausted",
+    technicalDescription: "localStorage quota exceeded - cannot save any more data",
+    possibleCauses: ["Too many files", "Large file stored", "Quota limit reached"],
+    suggestedFixes: ["Delete unnecessary files", "Clear old data", "Use recovery mode"]
+  },
   PARSE_FAILURE: { 
     hex: "0x00000013", 
     severity: "HIGH", 
@@ -116,6 +126,15 @@ export const BUGCHECK_CODES: Record<string, {
     possibleCauses: ["Memory leak", "Too many open apps", "Large data set"],
     suggestedFixes: ["Close browser tabs", "Restart browser", "Reduce open apps"]
   },
+  MEMORY_PRESSURE: { 
+    hex: "0x00000021", 
+    severity: "HIGH", 
+    category: "Memory",
+    userDescription: "The system is running low on available memory",
+    technicalDescription: "JavaScript heap usage is critically high",
+    possibleCauses: ["Memory leak", "Too many open apps", "Large data set"],
+    suggestedFixes: ["Close browser tabs", "Restart browser", "Reduce open apps"]
+  },
   INFINITE_LOOP: { 
     hex: "0x00000022", 
     severity: "HIGH", 
@@ -123,6 +142,15 @@ export const BUGCHECK_CODES: Record<string, {
     userDescription: "A process got stuck in an endless loop",
     technicalDescription: "Detected infinite re-render or processing loop",
     possibleCauses: ["useEffect dependency error", "Recursive call", "Logic error"],
+    suggestedFixes: ["Restart system", "Report bug to developers"]
+  },
+  INFINITE_LOOP_DETECTED: { 
+    hex: "0x00000022", 
+    severity: "HIGH", 
+    category: "Process",
+    userDescription: "A component is re-rendering excessively",
+    technicalDescription: "Detected infinite re-render loop in React component",
+    possibleCauses: ["useEffect dependency error", "Recursive call", "State update loop"],
     suggestedFixes: ["Restart system", "Report bug to developers"]
   },
   STACK_OVERFLOW: { 
@@ -133,6 +161,42 @@ export const BUGCHECK_CODES: Record<string, {
     technicalDescription: "Maximum call stack size exceeded",
     possibleCauses: ["Deep recursion", "Circular reference", "Infinite recursion"],
     suggestedFixes: ["Restart required", "Report to developers with reproduction steps"]
+  },
+  COMPONENT_STACK_OVERFLOW: { 
+    hex: "0x00000024", 
+    severity: "CRITICAL", 
+    category: "Stack",
+    userDescription: "A component caused a stack overflow",
+    technicalDescription: "Maximum call stack size exceeded in component tree",
+    possibleCauses: ["Deeply nested components", "Recursive rendering", "Circular dependencies"],
+    suggestedFixes: ["Restart required", "Check component hierarchy"]
+  },
+  DOM_MUTATION_OVERFLOW: { 
+    hex: "0x00000025", 
+    severity: "HIGH", 
+    category: "DOM",
+    userDescription: "Too many DOM changes occurred rapidly",
+    technicalDescription: "Excessive DOM mutations detected - possible infinite update loop",
+    possibleCauses: ["Animation loop error", "Rapid state updates", "MutationObserver issue"],
+    suggestedFixes: ["Restart system", "Check for runaway animations"]
+  },
+  NETWORK_FAILURE_CASCADE: { 
+    hex: "0x00000030", 
+    severity: "HIGH", 
+    category: "Network",
+    userDescription: "Multiple network connections failed consecutively",
+    technicalDescription: "Detected cascade of network failures - API or connectivity issue",
+    possibleCauses: ["Server unreachable", "API rate limiting", "Network instability"],
+    suggestedFixes: ["Check internet connection", "Wait and retry", "Check server status"]
+  },
+  LOCALSTORAGE_CORRUPTION: { 
+    hex: "0x00000031", 
+    severity: "CRITICAL", 
+    category: "Storage",
+    userDescription: "Critical system data is corrupted",
+    technicalDescription: "JSON parse failed on critical localStorage keys",
+    possibleCauses: ["Incomplete write", "Browser crash during save", "Manual tampering"],
+    suggestedFixes: ["Use data recovery", "Factory reset", "Restore from backup"]
   },
   DEV_ERR: { 
     hex: "0x000000FF", 
@@ -161,6 +225,15 @@ export const BUGCHECK_CODES: Record<string, {
     possibleCauses: ["Unhandled promise rejection", "Uncaught throw", "Async error"],
     suggestedFixes: ["Restart system", "Report bug with console logs"]
   },
+  ASYNC_FAILURE: { 
+    hex: "0x0000009A", 
+    severity: "MEDIUM", 
+    category: "Async",
+    userDescription: "An asynchronous operation failed unexpectedly",
+    technicalDescription: "Unhandled promise rejection at top level",
+    possibleCauses: ["Network timeout", "API error", "Race condition"],
+    suggestedFixes: ["Retry the operation", "Check network connection"]
+  },
   UNKNOWN_FATAL: { 
     hex: "0x000000DE", 
     severity: "CRITICAL", 
@@ -172,35 +245,9 @@ export const BUGCHECK_CODES: Record<string, {
   },
 };
 
-export const BugcheckScreen = ({ bugcheck, onRestart, onReportToDev }: BugcheckScreenProps) => {
-  const [copied, setCopied] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-
-  const copyReport = () => {
-    const report = JSON.stringify(bugcheck, null, 2);
-    navigator.clipboard.writeText(report);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const downloadReport = () => {
-    const report = JSON.stringify(bugcheck, null, 2);
-    const blob = new Blob([report], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `bugcheck_${bugcheck.code}_${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Save bugcheck to localStorage for DEF-DEV
-  useEffect(() => {
-    const existing = localStorage.getItem('urbanshade_bugchecks');
-    const bugchecks = existing ? JSON.parse(existing) : [];
-    bugchecks.push({ ...bugcheck, fromError: true });
-    localStorage.setItem('urbanshade_bugchecks', JSON.stringify(bugchecks.slice(-50)));
-  }, [bugcheck]);
+export const BugcheckScreen = ({ bugcheck, onRestart, onReportToDev, onRecovery }: BugcheckScreenProps) => {
+  const [selectedOption, setSelectedOption] = useState(0);
+  const [showingDetails, setShowingDetails] = useState(false);
 
   const codeInfo = BUGCHECK_CODES[bugcheck.code] || {
     hex: "0x000000DE",
@@ -212,208 +259,153 @@ export const BugcheckScreen = ({ bugcheck, onRestart, onReportToDev }: BugcheckS
     suggestedFixes: ["Restart the system"]
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'CRITICAL': return 'text-red-400 bg-red-500/20 border-red-500/30';
-      case 'HIGH': return 'text-orange-400 bg-orange-500/20 border-orange-500/30';
-      case 'MEDIUM': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
-      default: return 'text-slate-400 bg-slate-500/20 border-slate-500/30';
-    }
-  };
+  // Save bugcheck to localStorage for DEF-DEV
+  useEffect(() => {
+    const existing = localStorage.getItem('urbanshade_bugchecks');
+    const bugchecks = existing ? JSON.parse(existing) : [];
+    bugchecks.push({ ...bugcheck, fromError: true });
+    localStorage.setItem('urbanshade_bugchecks', JSON.stringify(bugchecks.slice(-50)));
+  }, [bugcheck]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        setSelectedOption(prev => Math.max(0, prev - 1));
+      } else if (e.key === "ArrowDown") {
+        setSelectedOption(prev => Math.min(2, prev + 1));
+      } else if (e.key === "Enter") {
+        if (selectedOption === 0) onRestart();
+        else if (selectedOption === 1) onRestart(); // Start normally
+        else if (selectedOption === 2 && onRecovery) onRecovery();
+      } else if (e.key === "F8") {
+        setShowingDetails(!showingDetails);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedOption, onRestart, onRecovery, showingDetails]);
+
+  const options = [
+    { 
+      label: "Launch Startup Repair (recommended)", 
+      desc: "Attempt to automatically fix problems that are preventing UrbanShade from starting",
+      action: onRestart 
+    },
+    { 
+      label: "Start UrbanShade Normally", 
+      desc: "Continue to boot without making changes",
+      action: onRestart 
+    },
+    { 
+      label: "Open Recovery Environment", 
+      desc: "Access advanced recovery tools and options",
+      action: onRecovery || onReportToDev 
+    },
+  ];
 
   return (
-    <div className="fixed inset-0 bg-[#080810] text-gray-100 flex flex-col font-mono z-[9999] overflow-hidden">
-      {/* Animated border */}
-      <div className="absolute inset-0 border-4 border-red-600/40 pointer-events-none" />
-      <div className="absolute inset-2 border border-red-600/20 pointer-events-none animate-pulse" style={{ animationDuration: '3s' }} />
-
-      {/* Header */}
-      <div className="bg-gradient-to-r from-red-950/90 to-red-900/70 border-b border-red-600/40 px-6 py-5">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-red-600/30 rounded-xl flex items-center justify-center border border-red-500/30">
-              <Shield className="w-8 h-8 text-red-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-red-400">SYSTEM BUGCHECK</h1>
-              <p className="text-xs text-red-300/60">The system has been halted to prevent damage</p>
-            </div>
-          </div>
-          <div className="text-right hidden sm:block">
-            <div className="text-xs text-red-400/60">Reference</div>
-            <div className="text-sm font-mono text-red-300">{codeInfo.hex}</div>
-          </div>
-        </div>
+    <div className="fixed inset-0 bg-[#0a0a0f] text-gray-100 flex flex-col font-mono z-[9999] overflow-hidden">
+      {/* Grey header bar */}
+      <div className="bg-gradient-to-r from-slate-700 to-slate-600 px-6 py-3">
+        <h1 className="text-lg font-bold text-white">UrbanShade Error Recovery</h1>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-5xl mx-auto space-y-5">
-          
-          {/* CRITICAL: Not a simulation warning - Bugchecks are REAL errors */}
-          <div className="p-5 bg-gradient-to-r from-red-950/60 to-red-900/40 border-2 border-red-500/40 rounded-xl">
-            <div className="flex items-start gap-4">
-              <AlertTriangle className="w-7 h-7 text-red-400 flex-shrink-0 animate-pulse" />
-              <div className="space-y-2">
-                <h2 className="text-lg font-bold text-red-400">⚠ REAL SYSTEM ERROR - NOT A SIMULATION</h2>
-                <p className="text-sm text-red-200/80 leading-relaxed">
-                  This is a <strong>genuine bugcheck</strong> - a real unrecoverable error in the UrbanShade OS application. 
-                  Unlike themed crash screens, bugchecks indicate actual code failures. The system force-halted to prevent 
-                  data corruption or cascading failures.
-                </p>
-              </div>
-            </div>
+      {/* Main content */}
+      <div className="flex-1 p-8 max-w-4xl">
+        {/* Error title */}
+        <div className="mb-6">
+          <p className="text-lg text-slate-300 leading-relaxed">
+            UrbanShade failed to start. A recent system change might be the cause.
+          </p>
+        </div>
+
+        {/* Error info box */}
+        <div className="mb-8 p-4 bg-slate-900/50 border border-slate-700/50 rounded">
+          <div className="text-sm text-slate-400 mb-2">
+            Status: <span className="text-red-400">{codeInfo.hex}</span>
           </div>
-
-          {/* Error Info Grid */}
-          <div className="grid md:grid-cols-3 gap-4">
-            {/* Stop Code */}
-            <div className="p-4 bg-slate-900/80 border border-slate-700 rounded-xl">
-              <div className="flex items-center gap-2 mb-3">
-                <Cpu className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs text-slate-400 uppercase">Stop Code</span>
-              </div>
-              <div className="text-xl font-bold text-red-400">{bugcheck.code}</div>
-              <div className="text-xs text-slate-500 font-mono mt-1">{codeInfo.hex}</div>
-            </div>
-
-            {/* Severity */}
-            <div className="p-4 bg-slate-900/80 border border-slate-700 rounded-xl">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <span className="text-xs text-slate-400 uppercase">Severity</span>
-              </div>
-              <span className={`inline-block px-3 py-1 rounded-lg text-sm font-bold border ${getSeverityColor(codeInfo.severity)}`}>
-                {codeInfo.severity}
-              </span>
-              <div className="text-xs text-slate-500 mt-2">{codeInfo.category}</div>
-            </div>
-
-            {/* Timestamp */}
-            <div className="p-4 bg-slate-900/80 border border-slate-700 rounded-xl">
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="w-4 h-4 text-purple-400" />
-                <span className="text-xs text-slate-400 uppercase">Occurred At</span>
-              </div>
-              <div className="text-sm text-slate-300">{new Date(bugcheck.timestamp).toLocaleString()}</div>
-            </div>
+          <div className="text-sm text-slate-400 mb-2">
+            Stop Code: <span className="text-cyan-400">{bugcheck.code}</span>
           </div>
-
-          {/* User-Friendly Description */}
-          <div className="p-5 bg-slate-900/60 border border-slate-700/50 rounded-xl">
-            <h3 className="font-bold text-slate-200 mb-3">What Happened</h3>
-            <p className="text-slate-300 leading-relaxed">{codeInfo.userDescription}</p>
-            {bugcheck.description && bugcheck.description !== codeInfo.userDescription && (
-              <p className="text-sm text-slate-400 mt-2 pt-2 border-t border-slate-700/50">
-                Details: {bugcheck.description}
-              </p>
-            )}
+          <div className="text-sm text-slate-400">
+            Info: <span className="text-slate-300">{codeInfo.userDescription}</span>
           </div>
-
-          {/* Possible Causes & Fixes */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-4 bg-slate-900/50 border border-orange-500/20 rounded-xl">
-              <h4 className="font-bold text-orange-400 mb-3 text-sm">Possible Causes</h4>
-              <ul className="space-y-1.5">
-                {codeInfo.possibleCauses.map((cause, i) => (
-                  <li key={i} className="text-sm text-slate-400 flex items-start gap-2">
-                    <span className="text-orange-400 mt-1">•</span>
-                    {cause}
-                  </li>
-                ))}
-              </ul>
+          {bugcheck.location && (
+            <div className="text-sm text-slate-400 mt-2">
+              Location: <span className="text-slate-500">{bugcheck.location}</span>
             </div>
-            <div className="p-4 bg-slate-900/50 border border-green-500/20 rounded-xl">
-              <h4 className="font-bold text-green-400 mb-3 text-sm">Suggested Fixes</h4>
-              <ul className="space-y-1.5">
-                {codeInfo.suggestedFixes.map((fix, i) => (
-                  <li key={i} className="text-sm text-slate-400 flex items-start gap-2">
-                    <span className="text-green-400 mt-1">✓</span>
-                    {fix}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          )}
+        </div>
 
-          {/* Technical Details (Collapsible) */}
-          <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl">
-            <button 
-              onClick={() => setShowDetails(!showDetails)}
-              className="w-full flex items-center justify-between text-sm"
+        {/* Options list */}
+        <div className="space-y-1">
+          {options.map((opt, i) => (
+            <div
+              key={i}
+              onClick={() => { setSelectedOption(i); opt.action?.(); }}
+              onMouseEnter={() => setSelectedOption(i)}
+              className={`p-3 cursor-pointer flex items-center gap-3 transition-colors ${
+                selectedOption === i 
+                  ? "bg-slate-700" 
+                  : "hover:bg-slate-800/50"
+              }`}
             >
-              <span className="text-slate-400">Technical Details</span>
-              <span className="text-slate-500">{showDetails ? '▼' : '▶'}</span>
-            </button>
-            {showDetails && (
-              <div className="mt-4 space-y-3 text-xs">
-                <div>
-                  <span className="text-slate-500">Technical Description:</span>
-                  <p className="text-slate-400 mt-1">{codeInfo.technicalDescription}</p>
-                </div>
-                {bugcheck.location && (
-                  <div>
-                    <span className="text-slate-500">Location:</span>
-                    <p className="text-slate-400 font-mono mt-1">{bugcheck.location}</p>
-                  </div>
-                )}
-                {bugcheck.stackTrace && (
-                  <div>
-                    <span className="text-slate-500">Stack Trace:</span>
-                    <pre className="text-slate-500 mt-1 overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto bg-black/50 p-2 rounded">
-                      {bugcheck.stackTrace}
-                    </pre>
-                  </div>
-                )}
+              <ChevronRight className={`w-4 h-4 ${selectedOption === i ? "text-cyan-400" : "text-transparent"}`} />
+              <span className={selectedOption === i ? "text-white" : "text-slate-400"}>
+                {opt.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Description panel */}
+        <div className="mt-8 p-4 bg-slate-900/30 border-l-2 border-cyan-500/50">
+          <p className="text-sm text-slate-400">
+            {options[selectedOption]?.desc}
+          </p>
+        </div>
+
+        {/* Technical details (F8 to toggle) */}
+        {showingDetails && (
+          <div className="mt-6 p-4 bg-black/50 border border-slate-700 rounded text-xs">
+            <div className="text-slate-500 mb-2">Technical Details:</div>
+            <div className="text-slate-400 mb-1">• {codeInfo.technicalDescription}</div>
+            <div className="text-slate-500 mt-3 mb-1">Possible Causes:</div>
+            {codeInfo.possibleCauses.map((cause, i) => (
+              <div key={i} className="text-slate-400">  - {cause}</div>
+            ))}
+            {bugcheck.stackTrace && (
+              <div className="mt-3">
+                <div className="text-slate-500 mb-1">Stack Trace:</div>
+                <pre className="text-slate-500 overflow-x-auto whitespace-pre-wrap max-h-24 overflow-y-auto">
+                  {bugcheck.stackTrace}
+                </pre>
               </div>
             )}
           </div>
-
-          {/* DEF-DEV Notice */}
-          <div className="p-3 bg-amber-950/30 border border-amber-600/30 rounded-lg text-xs text-amber-300/80 flex items-center gap-3">
-            <Bug className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            <span>This bugcheck has been logged. Open DEF-DEV Console to view full details and share with developers.</span>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Actions Footer */}
-      <div className="border-t border-slate-800 bg-slate-950/90 p-4">
-        <div className="max-w-5xl mx-auto flex flex-wrap gap-3 justify-center">
+      {/* Footer */}
+      <div className="px-8 py-4 bg-slate-900/50 border-t border-slate-800 flex items-center justify-between">
+        <div className="text-xs text-slate-500">
+          ENTER=Choose &nbsp; ↑↓=Select &nbsp; F8=Details
+        </div>
+        <div className="flex items-center gap-4">
           <button
-            onClick={copyReport}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm border border-slate-700 transition-colors"
+            onClick={onReportToDev}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs text-amber-400 hover:bg-amber-500/10 rounded transition-colors"
           >
-            <Copy className="w-4 h-4" />
-            {copied ? "Copied!" : "Copy Report"}
-          </button>
-          <button
-            onClick={downloadReport}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm border border-slate-700 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Download
-          </button>
-          <button
-            onClick={() => {
-              localStorage.setItem('urbanshade_crash_entry', JSON.stringify({
-                ...bugcheck,
-                fromError: true,
-                isBugcheck: true
-              }));
-              onReportToDev();
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-amber-700/80 hover:bg-amber-600 rounded-lg text-sm border border-amber-600/50 transition-colors"
-          >
-            <Terminal className="w-4 h-4" />
-            Open DEF-DEV
+            <Wrench className="w-3 h-3" />
+            DEF-DEV
           </button>
           <button
             onClick={onRestart}
-            className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-bold border border-red-500 shadow-lg shadow-red-600/30 transition-colors"
+            className="flex items-center gap-2 px-4 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm font-medium transition-colors"
           >
-            <RefreshCw className="w-4 h-4" />
-            RESTART
+            <RefreshCw className="w-3 h-3" />
+            Restart
           </button>
         </div>
       </div>

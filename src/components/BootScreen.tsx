@@ -84,12 +84,6 @@ export const BootScreen = ({ onComplete, onSafeMode }: BootScreenProps) => {
         className={`w-20 h-20 transition-opacity duration-500 ${phase === "loading" ? "opacity-100" : "opacity-80"}`}
       />
       
-      {/* Safe mode indicator */}
-      {safeModePressed && (
-        <p className="mt-4 text-amber-500 text-sm font-mono animate-pulse">
-          Entering safe mode...
-        </p>
-      )}
 
       {/* Loading bar - only show during loading phase */}
       <div className={`mt-12 w-64 transition-opacity duration-300 ${phase === "loading" ? "opacity-100" : "opacity-0"}`}>
