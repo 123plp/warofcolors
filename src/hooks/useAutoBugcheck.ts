@@ -65,18 +65,18 @@ export const useAutoBugcheck = ({ triggerBugcheck }: UseAutoBugcheckProps) => {
     const handleError = (event: ErrorEvent) => {
       // Only trigger bugcheck for critical errors
       const criticalPatterns = [
-        /maximum call stack/i,
-        /out of memory/i,
-        /cannot read.*null/i,
-        /cannot read.*undefined/i,
-        /is not a function/i,
+        { pattern: /maximum call stack/i, code: 'COMPONENT_STACK_OVERFLOW' },
+        { pattern: /out of memory/i, code: 'MEMORY_EXHAUSTED' },
+        { pattern: /cannot read.*null/i, code: 'UNHANDLED_EXCEPTION' },
+        { pattern: /cannot read.*undefined/i, code: 'UNHANDLED_EXCEPTION' },
+        { pattern: /is not a function/i, code: 'UNHANDLED_EXCEPTION' },
       ];
 
-      const isCritical = criticalPatterns.some(p => p.test(event.message));
+      const match = criticalPatterns.find(p => p.pattern.test(event.message));
       
-      if (isCritical && !commandQueue.areBugchecksDisabled()) {
+      if (match && !commandQueue.areBugchecksDisabled()) {
         triggerBugcheck(
-          'UNHANDLED_EXCEPTION',
+          match.code,
           event.message,
           `${event.filename}:${event.lineno}:${event.colno}`,
           event.error?.stack
