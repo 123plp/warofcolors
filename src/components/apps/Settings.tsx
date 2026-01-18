@@ -230,8 +230,8 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
     checked: boolean;
     onCheckedChange: (checked: boolean) => void;
   }) => (
-    <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-card/40 border border-border/30 hover:bg-card/60 transition-colors">
-      <div className="flex items-center gap-3 flex-1 min-w-0 mr-4">
+    <div className="relative flex items-center justify-between py-3 px-4 rounded-lg bg-card/40 border border-border/30 hover:bg-card/60 transition-colors">
+      <div className="flex items-center gap-3 flex-1 min-w-0 mr-4 pointer-events-none">
         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
           <Icon className="w-4 h-4" />
         </div>
@@ -240,7 +240,13 @@ export const Settings = ({ onUpdate }: { onUpdate?: () => void }) => {
           {description && <div className="text-xs text-muted-foreground truncate">{description}</div>}
         </div>
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+      <div className="relative z-50">
+        <Switch 
+          checked={checked} 
+          onCheckedChange={onCheckedChange}
+          className="pointer-events-auto cursor-pointer"
+        />
+      </div>
     </div>
   );
 
